@@ -21,6 +21,7 @@ const EXPERIENCE_LIMITS = Object.freeze({
   giftDescription: 100,
   memoryMax: 10,
   memoryCaption: 50,
+  avatarUploadBytes: 8 * 1024 * 1024,
 });
 
 function validateExperienceConfig(config) {
@@ -63,6 +64,8 @@ function validateExperienceConfig(config) {
   const age = Number(config.birthday?.age);
   if (!Number.isInteger(age) || age < 1 || age > 120)
     addError('birthday.age', 'INVALID_AGE', 'อายุต้องเป็นตัวเลขระหว่าง 1–120');
+  if (!text(config.birthday?.avatarUrl))
+    addError('birthday.avatarUrl', 'REQUIRED', 'กรุณาเลือกรูป Avatar');
   if (
     text(config.birthday?.card?.message).length >
     EXPERIENCE_LIMITS.greetingMessage

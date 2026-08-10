@@ -7,6 +7,13 @@ const DEFAULT_EXPERIENCE_CONFIG = {
     introLead: 'วันนี้ไม่อยากให้เป็นแค่วันธรรมดา เลยทำอะไรเล็ก ๆ ให้ลองเล่นดู 🎁',
     avatarUrl: 'assets/chaw-birthday-avatar.png',
     avatarAlt: 'Chaw สวมหมวกวันเกิด',
+    avatarEditor: {
+      sourceUrl: 'assets/chaw-birthday-avatar.png',
+      zoom: 1,
+      offsetX: 0,
+      offsetY: 0,
+      hatEnabled: false
+    },
     card: {
       title: 'สุขสันต์วันเกิดนะ 💖',
       message: 'ขอให้ปีนี้มีแต่เรื่องดี ๆ ได้ทำสิ่งที่อยากทำ มีรอยยิ้มเยอะ ๆ และเจอ Surprise ที่น่ารักกว่าที่คิด ✨',

@@ -42,7 +42,7 @@
           <button class="active" data-tab="general">General</button>
           <button data-tab="cake">Cake</button>
           <button data-tab="card">Card after Cake</button>
-          <button data-tab="avatar">Avatar <small>ถัดไป</small></button>
+          <button data-tab="avatar">Avatar</button>
           <button data-tab="quiz">Quiz <small>ถัดไป</small></button>
           <button data-tab="gifts">Gifts <small>ถัดไป</small></button>
           <button data-tab="memories">Memories <small>ถัดไป</small></button>
@@ -221,11 +221,47 @@
             </div>
           </section>
 
-          <section class="settings-section coming-soon" data-panel="avatar">
-            <div>
-              🧑‍🎨
-              <h2>Avatar editor</h2>
-              <p>รอบถัดไปจะเพิ่ม Upload, Crop และวางหมวกวันเกิด</p>
+          <section class="settings-section" data-panel="avatar">
+            <div class="section-heading">
+              <span>04</span>
+              <div>
+                <h2>Avatar</h2>
+                <p>อัปโหลดรูป ลากจัดตำแหน่ง และใส่หมวกวันเกิด</p>
+              </div>
+            </div>
+            <div class="avatar-editor-layout">
+              <div>
+                <button class="avatar-upload" id="avatarUploadBtn" type="button">
+                  <span>📷</span><b>เลือกรูปใบหน้า</b>
+                  <small>JPG, PNG หรือ WebP • ไม่เกิน 8 MB</small>
+                </button>
+                <input id="avatarFile" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+                <p class="avatar-help">ลากบนรูปเพื่อจัดใบหน้าให้อยู่กลางวงกลม</p>
+              </div>
+              <div class="avatar-canvas-wrap" id="avatarCanvasWrap">
+                <canvas id="avatarCanvas" width="512" height="512" aria-label="ตัวอย่าง Avatar"></canvas>
+                <span class="avatar-drag-hint">ลากเพื่อขยับ</span>
+              </div>
+            </div>
+            <div class="avatar-controls">
+              <label class="field range-field">
+                <span>ซูมรูป <b id="avatarZoomValue">100%</b></span>
+                <input id="avatarZoom" type="range" min="1" max="3" step="0.01" value="1" />
+              </label>
+              <div class="field-grid two-columns">
+                <label class="field range-field"><span>ตำแหน่งแนวนอน</span><input id="avatarOffsetX" type="range" min="-50" max="50" step="1" value="0" /></label>
+                <label class="field range-field"><span>ตำแหน่งแนวตั้ง</span><input id="avatarOffsetY" type="range" min="-50" max="50" step="1" value="0" /></label>
+              </div>
+              <div class="toggle-card">
+                <div><b>หมวกวันเกิด</b><span>วางหมวกให้อัตโนมัติบน Avatar</span></div>
+                <label class="switch"><input id="avatarHatEnabled" type="checkbox" /><i></i></label>
+              </div>
+              <div class="avatar-actions">
+                <button class="quiet-btn" id="avatarCenterBtn" type="button">จัดกึ่งกลาง</button>
+                <button class="quiet-btn" id="avatarResetBtn" type="button">ใช้รูป Default</button>
+              </div>
+              <div class="avatar-error" id="avatarError" role="alert"></div>
+              <em data-error="birthday.avatarUrl"></em>
             </div>
           </section>
           <section class="settings-section coming-soon" data-panel="quiz">

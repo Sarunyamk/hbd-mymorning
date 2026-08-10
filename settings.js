@@ -5,6 +5,10 @@ const previewFrame=document.getElementById('previewFrame');
 let draftConfig=loadDraft();
 let saveTimer=null;
 let previewTimer=null;
+let avatarImage=null;
+let avatarLoadToken=0;
+let avatarCommitTimer=null;
+let avatarDrag=null;
 
 function clone(value){return typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value));}
 function merge(defaultValue,customValue){
@@ -29,6 +33,98 @@ function formatTemplate(value=''){
   return String(value).replaceAll('{name}',draftConfig.birthday.name||'').replaceAll('{age}',draftConfig.birthday.age||'');
 }
 
+function avatarEditorConfig(){
+  if(!draftConfig.birthday.avatarEditor)draftConfig.birthday.avatarEditor=clone(defaults.birthday.avatarEditor);
+  return draftConfig.birthday.avatarEditor;
+}
+
+function syncAvatarControls(){
+  const editor=avatarEditorConfig();
+  document.getElementById('avatarZoom').value=editor.zoom;
+  document.getElementById('avatarOffsetX').value=editor.offsetX;
+  document.getElementById('avatarOffsetY').value=editor.offsetY;
+  document.getElementById('avatarHatEnabled').checked=Boolean(editor.hatEnabled);
+  document.getElementById('avatarZoomValue').textContent=`${Math.round(editor.zoom*100)}%`;
+  loadAvatarSource(editor.sourceUrl||draftConfig.birthday.avatarUrl);
+}
+
+function loadImage(url){
+  return new Promise((resolve,reject)=>{
+    const image=new Image();
+    image.onload=()=>resolve(image);
+    image.onerror=()=>reject(new Error('IMAGE_LOAD_FAILED'));
+    image.src=url;
+  });
+}
+
+async function loadAvatarSource(url){
+  const token=++avatarLoadToken;
+  try{
+    const image=await loadImage(url);
+    if(token!==avatarLoadToken)return;
+    avatarImage=image;
+    document.getElementById('avatarError').textContent='';
+    drawAvatarCanvas(false);
+  }catch(error){
+    if(token===avatarLoadToken)document.getElementById('avatarError').textContent='เปิดรูปนี้ไม่ได้ กรุณาเลือกรูปใหม่';
+  }
+}
+
+function drawPartyHat(context,size){
+  const center=size*.5,top=size*.015,baseY=size*.36,halfWidth=size*.145;
+  context.save();
+  context.lineJoin='round';
+  const gradient=context.createLinearGradient(center-halfWidth,baseY,center+halfWidth,top);
+  gradient.addColorStop(0,'#ff73ad');gradient.addColorStop(.52,'#a890ff');gradient.addColorStop(1,'#67d9e8');
+  context.beginPath();context.moveTo(center,top+size*.03);context.lineTo(center-halfWidth,baseY);context.lineTo(center+halfWidth,baseY);context.closePath();
+  context.fillStyle=gradient;context.fill();context.lineWidth=size*.012;context.strokeStyle='rgba(255,255,255,.92)';context.stroke();
+  ['#ffe374','#fff','#ff8ab8'].forEach((color,index)=>{
+    context.beginPath();context.arc(center+([-0.045,.045,0][index]*size),size*([.18,.27,.1][index]),size*.014,0,Math.PI*2);context.fillStyle=color;context.fill();
+  });
+  context.beginPath();context.ellipse(center,baseY,size*.158,size*.032,0,0,Math.PI*2);context.fillStyle='#fff4fc';context.fill();
+  context.beginPath();context.arc(center,top+size*.018,size*.035,0,Math.PI*2);context.fillStyle='#ffe374';context.fill();context.stroke();
+  context.restore();
+}
+
+function drawAvatarCanvas(commit=true){
+  if(!avatarImage)return;
+  const canvas=document.getElementById('avatarCanvas'),context=canvas.getContext('2d');
+  const size=canvas.width,editor=avatarEditorConfig();
+  context.clearRect(0,0,size,size);
+  context.fillStyle='#39294a';context.fillRect(0,0,size,size);
+  const cover=Math.max(size/avatarImage.naturalWidth,size/avatarImage.naturalHeight)*Number(editor.zoom||1);
+  const width=avatarImage.naturalWidth*cover,height=avatarImage.naturalHeight*cover;
+  const x=(size-width)/2+(Number(editor.offsetX)||0)*size/100;
+  const y=(size-height)/2+(Number(editor.offsetY)||0)*size/100;
+  context.drawImage(avatarImage,x,y,width,height);
+  if(editor.hatEnabled)drawPartyHat(context,size);
+  if(!commit)return;
+  draftConfig.birthday.avatarUrl=canvas.toDataURL('image/webp',.86);
+  draftConfig.birthday.avatarAlt=`${draftConfig.birthday.name||'เจ้าของวันเกิด'}${editor.hatEnabled?' สวมหมวกวันเกิด':''}`;
+}
+
+function scheduleAvatarCommit(){
+  clearTimeout(avatarCommitTimer);
+  avatarCommitTimer=setTimeout(()=>{drawAvatarCanvas(true);showValidation();scheduleSaveAndPreview();},140);
+}
+
+async function prepareAvatarUpload(file){
+  const error=document.getElementById('avatarError');error.textContent='';
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){error.textContent='รองรับเฉพาะไฟล์ JPG, PNG และ WebP';return;}
+  if(file.size>EXPERIENCE_LIMITS.avatarUploadBytes){error.textContent='ไฟล์ต้องมีขนาดไม่เกิน 8 MB';return;}
+  try{
+    const objectUrl=URL.createObjectURL(file),source=await loadImage(objectUrl);URL.revokeObjectURL(objectUrl);
+    const maxSide=1024,scale=Math.min(1,maxSide/Math.max(source.naturalWidth,source.naturalHeight));
+    const canvas=document.createElement('canvas');canvas.width=Math.round(source.naturalWidth*scale);canvas.height=Math.round(source.naturalHeight*scale);
+    canvas.getContext('2d').drawImage(source,0,0,canvas.width,canvas.height);
+    const editor=avatarEditorConfig();
+    editor.sourceUrl=canvas.toDataURL('image/webp',.82);editor.zoom=1;editor.offsetX=0;editor.offsetY=8;editor.hatEnabled=true;
+    syncAvatarControls();
+    await loadAvatarSource(editor.sourceUrl);
+    drawAvatarCanvas(true);showValidation();scheduleSaveAndPreview();
+  }catch(uploadError){error.textContent='ประมวลผลรูปไม่สำเร็จ กรุณาลองไฟล์อื่น';console.error('Avatar upload error:',uploadError);}
+}
+
 function renderForm(){
   form.querySelectorAll('[data-path]').forEach(input=>{
     const value=getPath(draftConfig,input.dataset.path);
@@ -36,6 +132,7 @@ function renderForm(){
     else input.value=value??'';
   });
   updateDerivedUi();
+  syncAvatarControls();
   showValidation();
 }
 
@@ -101,10 +198,65 @@ form.addEventListener('input',event=>{
   updateDerivedUi();showValidation();scheduleSaveAndPreview();
 });
 
-document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{
+document.getElementById('avatarUploadBtn').addEventListener('click',()=>document.getElementById('avatarFile').click());
+document.getElementById('avatarFile').addEventListener('change',event=>{
+  const file=event.target.files?.[0];
+  if(file)prepareAvatarUpload(file);
+  event.target.value='';
+});
+['avatarZoom','avatarOffsetX','avatarOffsetY'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',event=>{
+    const editor=avatarEditorConfig();
+    const property={avatarZoom:'zoom',avatarOffsetX:'offsetX',avatarOffsetY:'offsetY'}[id];
+    editor[property]=Number(event.target.value);
+    document.getElementById('avatarZoomValue').textContent=`${Math.round(editor.zoom*100)}%`;
+    drawAvatarCanvas(false);scheduleAvatarCommit();
+  });
+});
+document.getElementById('avatarHatEnabled').addEventListener('change',event=>{
+  avatarEditorConfig().hatEnabled=event.target.checked;drawAvatarCanvas(false);scheduleAvatarCommit();
+});
+document.getElementById('avatarCenterBtn').addEventListener('click',()=>{
+  const editor=avatarEditorConfig();editor.zoom=1;editor.offsetX=0;editor.offsetY=editor.hatEnabled?8:0;
+  syncAvatarControls();drawAvatarCanvas(false);scheduleAvatarCommit();
+});
+document.getElementById('avatarResetBtn').addEventListener('click',async()=>{
+  draftConfig.birthday.avatarEditor=clone(defaults.birthday.avatarEditor);
+  draftConfig.birthday.avatarUrl=defaults.birthday.avatarUrl;
+  draftConfig.birthday.avatarAlt=defaults.birthday.avatarAlt;
+  syncAvatarControls();showValidation();scheduleSaveAndPreview();
+});
+const avatarCanvasWrap=document.getElementById('avatarCanvasWrap');
+avatarCanvasWrap.addEventListener('pointerdown',event=>{
+  const editor=avatarEditorConfig();
+  avatarDrag={pointerId:event.pointerId,x:event.clientX,y:event.clientY,offsetX:Number(editor.offsetX)||0,offsetY:Number(editor.offsetY)||0};
+  avatarCanvasWrap.setPointerCapture(event.pointerId);avatarCanvasWrap.classList.add('dragging');
+});
+avatarCanvasWrap.addEventListener('pointermove',event=>{
+  if(!avatarDrag||event.pointerId!==avatarDrag.pointerId)return;
+  const editor=avatarEditorConfig(),rect=avatarCanvasWrap.getBoundingClientRect();
+  editor.offsetX=Math.max(-50,Math.min(50,avatarDrag.offsetX+(event.clientX-avatarDrag.x)/rect.width*100));
+  editor.offsetY=Math.max(-50,Math.min(50,avatarDrag.offsetY+(event.clientY-avatarDrag.y)/rect.height*100));
+  document.getElementById('avatarOffsetX').value=editor.offsetX;
+  document.getElementById('avatarOffsetY').value=editor.offsetY;
+  drawAvatarCanvas(false);scheduleAvatarCommit();
+});
+function endAvatarDrag(event){
+  if(!avatarDrag||event.pointerId!==avatarDrag.pointerId)return;
+  avatarDrag=null;avatarCanvasWrap.classList.remove('dragging');scheduleAvatarCommit();
+}
+avatarCanvasWrap.addEventListener('pointerup',endAvatarDrag);
+avatarCanvasWrap.addEventListener('pointercancel',endAvatarDrag);
+
+function openSettingsTab(name,{updateHash=true}={}){
+  const button=document.querySelector(`[data-tab="${name}"]`);
+  if(!button)return;
   document.querySelectorAll('[data-tab]').forEach(item=>item.classList.toggle('active',item===button));
   document.querySelectorAll('[data-panel]').forEach(panel=>panel.classList.toggle('active',panel.dataset.panel===button.dataset.tab));
-}));
+  if(updateHash)history.replaceState(null,'',`#${name}`);
+}
+document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>openSettingsTab(button.dataset.tab)));
+window.addEventListener('hashchange',()=>openSettingsTab(location.hash.slice(1)||'general',{updateHash:false}));
 
 document.getElementById('deviceWidth').addEventListener('change',event=>{document.getElementById('deviceFrame').style.width=`${event.target.value}px`;});
 document.getElementById('previewBtn').addEventListener('click',()=>{sendPreview();document.getElementById('previewPanel').scrollIntoView({behavior:'smooth',block:'start'});});
@@ -137,3 +289,4 @@ document.getElementById('importFile').addEventListener('change',async event=>{
 window.addEventListener('beforeunload',saveDraft);
 
 renderForm();
+openSettingsTab(location.hash.slice(1)||'general',{updateHash:false});
