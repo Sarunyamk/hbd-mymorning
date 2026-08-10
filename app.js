@@ -74,7 +74,7 @@ function showScene(name) {
   document.querySelectorAll('.scene').forEach(x=>x.classList.remove('active'));
   const el=document.getElementById('scene-'+name);
   if(el) el.classList.add('active');
-  document.getElementById('collectionFab').style.display = state.gifts.length && !['intro','cake','message','quiz','result'].includes(name) ? 'grid':'none';
+  document.getElementById('collectionFab').style.display = state.gifts.length && !['intro','cake','message','quiz','result','memories'].includes(name) ? 'grid':'none';
   if(name==='final') celebrate(70);
 }
 
@@ -379,10 +379,12 @@ function keepGift() {
 }
 
 function openFinalSurprise(button) {
-  if(state.finalOpened) return;
+  if(state.finalOpened) {
+    showScene('memories');
+    return;
+  }
   state.finalOpened=true;
-  button.disabled=true;
-  button.hidden=true;
+  button.textContent='My Memories 📸';
   showScene('final');
 }
 function renderSummary() {
@@ -415,6 +417,7 @@ function restartExperience() {
   const finalButton=document.getElementById('finalSurpriseBtn');
   finalButton.disabled=false;
   finalButton.hidden=false;
+  finalButton.textContent='มีอีกอย่างหนึ่ง... ❤️';
   showScene('intro');
 }
 function jumpScene(name) {

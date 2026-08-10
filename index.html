@@ -129,7 +129,11 @@
 
             <section class="scene" id="scene-message">
               <div class="card">
-                <div style="font-size: 46px">🎉</div>
+                <div class="quiz-avatar-wrap">
+                  <img class="quiz-avatar" src="assets/chaw-birthday-avatar.png" alt="Chaw สวมหมวกวันเกิด" />
+                  <span class="avatar-spark avatar-spark-1">✦</span>
+                  <span class="avatar-spark avatar-spark-2">♥</span>
+                </div>
                 <h2>สุขสันต์วันเกิดนะ 💖</h2>
                 <p>
                   ขอให้ปีนี้มีแต่เรื่องดี ๆ ได้ทำสิ่งที่อยากทำ มีรอยยิ้มเยอะ ๆ
@@ -246,9 +250,36 @@
                 <button class="primary" onclick="showScene('summary')">
                   ดูของขวัญอีกครั้ง 🎁
                 </button>
-                <button class="secondary" onclick="restartExperience()">
-                  เล่นใหม่
+                <button class="secondary" onclick="showScene('memories')">
+                  My Memories 📸
                 </button>
+              </div>
+            </section>
+
+            <section class="scene scrollable" id="scene-memories">
+              <div class="memory-shell">
+                <div class="eyebrow">A little time capsule</div>
+                <h1 class="memory-title">My Memories<br /><span>of Chaw ✨</span></h1>
+                <p class="memory-intro">บางช่วงเวลาอาจผ่านไปเร็ว แต่ความรู้สึกดี ๆ ยังอยู่ตรงนี้เสมอ</p>
+                <div class="memory-collage">
+                  <figure class="memory-card memory-featured"><img src="assets/chaw-birthday-avatar.png" alt="Birthday memory of Chaw" /><figcaption>Birthday boy 🎂</figcaption></figure>
+                  <figure class="memory-card memory-tilt-left"><img class="memory-look memory-look-warm" src="assets/chaw-birthday-avatar.png" alt="ความทรงจำของ Chaw" /><figcaption>วันที่หัวเราะด้วยกัน</figcaption></figure>
+                  <figure class="memory-card memory-tilt-right"><img class="memory-look memory-look-cool" src="assets/chaw-birthday-avatar.png" alt="ความทรงจำของ Chaw" /><figcaption>เรื่องเล็ก ๆ ที่น่าจำ</figcaption></figure>
+                  <figure class="memory-card memory-wide"><img class="memory-look memory-look-night" src="assets/chaw-birthday-avatar.png" alt="ความทรงจำของ Chaw" /><figcaption>คืนที่อยากหยุดเวลาไว้</figcaption></figure>
+                  <figure class="memory-card memory-tilt-left"><img class="memory-look memory-look-mint" src="assets/chaw-birthday-avatar.png" alt="ความทรงจำของ Chaw" /><figcaption>ทริปที่ยังคิดถึง</figcaption></figure>
+                  <figure class="memory-card memory-tilt-right"><img class="memory-look memory-look-pink" src="assets/chaw-birthday-avatar.png" alt="ความทรงจำของ Chaw" /><figcaption>ยิ้มแบบนี้ไปนาน ๆ นะ</figcaption></figure>
+                </div>
+                <div class="memory-film" aria-label="ภาพความทรงจำของ Chaw">
+                  <div><img src="assets/chaw-birthday-avatar.png" alt="Chaw memory 1" /></div>
+                  <div><img src="assets/chaw-birthday-avatar.png" alt="Chaw memory 2" /></div>
+                  <div><img src="assets/chaw-birthday-avatar.png" alt="Chaw memory 3" /></div>
+                  <div><img src="assets/chaw-birthday-avatar.png" alt="Chaw memory 4" /></div>
+                </div>
+                <p class="memory-note">ทุกภาพคือช่วงเวลาของ Chaw 💖</p>
+                <div class="buttons memory-actions">
+                  <button class="secondary" onclick="showScene('final')">← กลับ</button>
+                  <button class="primary" onclick="restartExperience()">เริ่มใหม่ ✨</button>
+                </div>
               </div>
             </section>
 
