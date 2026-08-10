@@ -2,8 +2,10 @@ const state = {
   scene:'intro', score:0, qIndex:0, answered:false,
   picks:0, used:0, gifts:[], selectedBall:null,
   music:true, audioCtx:null, melodyTimer:null, micStream:null, micSource:null, analyser:null, micRAF:null,
-  holdTimer:null, holdValue:0, boxOpened:false, blowCompleted:false
+  holdTimer:null, holdValue:0, boxOpened:false, blowCompleted:false, crackCount:0, finalOpened:false
 };
+
+const name_birthday = 'chaw';
 
 const MIC_CONFIG = {
   threshold: 0.04,
@@ -49,6 +51,9 @@ const gifts = [
 ];
 
 const colors = ['#ff8fb8','#9e88ff','#63c7e8','#ffd15c','#70d6a6','#ff9f69','#e87bff','#73a4ff','#ff668f','#a5e56c'];
+
+document.getElementById('birthdayName').textContent=name_birthday;
+document.getElementById('cakeBirthdayName').textContent=name_birthday;
 
 function sparkleInit() {
   const root=document.getElementById('sparkles');
@@ -316,15 +321,35 @@ function selectBall(ball) {
   const gift=JSON.parse(ball.dataset.gift);
   state.selectedBall={el:ball,gift};
   const overlay=document.getElementById('revealOverlay'), rb=document.getElementById('revealBall');
-  rb.style.background=getComputedStyle(ball).backgroundColor;
+  const ballColor=getComputedStyle(ball).backgroundColor;
+  rb.style.background=ballColor;
+  rb.style.setProperty('--ball-color',ballColor);
+  rb.className='reveal-ball';
+  rb.disabled=false;
+  state.crackCount=0;
   document.getElementById('revealBallWrap').style.display='block';
+  document.getElementById('crackHint').textContent='แตะลูกบอลให้แตก ✨';
   document.getElementById('revealCard').classList.remove('show');
   overlay.classList.add('show');
-  setTimeout(()=>rb.classList.add('shaking'),260);
-  setTimeout(()=>{
-    rb.classList.remove('shaking');document.getElementById('revealBallWrap').style.display='none';
-    revealGift(gift);
-  },1300);
+}
+function crackSelectedBall() {
+  if(!state.selectedBall || state.crackCount>=3) return;
+  const rb=document.getElementById('revealBall');
+  state.crackCount++;
+  rb.classList.remove('shaking');
+  void rb.offsetWidth;
+  rb.classList.add('shaking','crack-'+state.crackCount);
+  tone(190+state.crackCount*85,.09,.03);
+  const remaining=3-state.crackCount;
+  document.getElementById('crackHint').textContent=remaining ? `แตะอีก ${remaining} ครั้งเพื่อเปิด 💥` : 'แตกแล้ว! ✨';
+  if(state.crackCount===3) {
+    rb.disabled=true;
+    setTimeout(()=>rb.classList.add('bursting'),180);
+    setTimeout(()=>{
+      document.getElementById('revealBallWrap').style.display='none';
+      revealGift(state.selectedBall.gift);
+    },620);
+  }
 }
 function revealGift(g) {
   document.getElementById('giftIcon').textContent=g.icon;
@@ -352,6 +377,14 @@ function keepGift() {
     document.getElementById('giftHint').textContent=`เหลืออีก ${state.picks-state.used} ลูกที่จะเลือกได้ ✨`;
   }
 }
+
+function openFinalSurprise(button) {
+  if(state.finalOpened) return;
+  state.finalOpened=true;
+  button.disabled=true;
+  button.hidden=true;
+  showScene('final');
+}
 function renderSummary() {
   const root=document.getElementById('giftGrid');root.innerHTML='';
   const list=state.gifts.length?state.gifts:gifts.slice(0,8);
@@ -376,9 +409,12 @@ function celebrate(count=35) {
 
 function restartExperience() {
   stopMic(); clearInterval(state.melodyTimer);
-  state.score=0;state.qIndex=0;state.picks=0;state.used=0;state.gifts=[];state.boxOpened=false;state.blowCompleted=false;
+  state.score=0;state.qIndex=0;state.picks=0;state.used=0;state.gifts=[];state.boxOpened=false;state.blowCompleted=false;state.crackCount=0;state.finalOpened=false;
   renderCandles();document.getElementById('blowMeter').style.width='0%';document.getElementById('blowStatus').textContent='';
   document.getElementById('collectionFab').style.display='none';
+  const finalButton=document.getElementById('finalSurpriseBtn');
+  finalButton.disabled=false;
+  finalButton.hidden=false;
   showScene('intro');
 }
 function jumpScene(name) {

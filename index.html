@@ -72,9 +72,11 @@
             </div>
 
             <section class="scene active" id="scene-intro">
-              <div class="eyebrow">A tiny surprise for you</div>
               <div class="intro-orb"></div>
-              <h1 class="display gradient-text">Happy<br />Birthday ✨</h1>
+              <h1 class="display gradient-text">
+                Happy<br />Birthday ✨
+                <span class="birthday-name" id="birthdayName"></span>
+              </h1>
               <p class="lead">
                 วันนี้ไม่อยากให้เป็นแค่วันธรรมดา เลยทำอะไรเล็ก ๆ ให้ลองเล่นดู 🎁
               </p>
@@ -96,8 +98,14 @@
 
               <div class="cake-zone">
                 <div class="candles" id="candles"></div>
-                <div class="cake-top"></div>
-                <div class="cake-bottom"></div>
+                <div class="cake-top">
+                  <div class="cake-message">
+                    <strong>HDB <span id="cakeBirthdayName"></span></strong>
+                  </div>
+                </div>
+                <div class="cake-bottom">
+                  <div class="cake-age">32 y.</div>
+                </div>
               </div>
 
               <div class="blow-meter"><span id="blowMeter"></span></div>
@@ -218,7 +226,7 @@
                   เก็บครบแล้ว ลองดูว่าจับได้อะไรบ้าง
                 </p>
                 <div class="gift-grid" id="giftGrid"></div>
-                <button class="primary" onclick="showScene('final')">
+                <button class="primary" id="finalSurpriseBtn" onclick="openFinalSurprise(this)">
                   มีอีกอย่างหนึ่ง... ❤️
                 </button>
               </div>
@@ -255,9 +263,19 @@
 
             <div class="reveal-overlay" id="revealOverlay">
               <div id="revealBallWrap">
-                <div class="reveal-ball" id="revealBall"></div>
-                <div style="margin-top: 16px; font-weight: 800; color: #e8ddeb">
-                  กำลังเปิด... ✨
+                <button class="reveal-ball" id="revealBall" onclick="crackSelectedBall()" aria-label="แตะเพื่อกะเทาะลูกบอล">
+                  <svg class="crack-art" viewBox="0 0 130 130" aria-hidden="true">
+                    <path class="crack-layer crack-layer-1" d="M70 8 62 27 72 38 57 51 65 63 49 78 56 91 43 111" />
+                    <path class="crack-layer crack-layer-2" d="M58 50 39 43 26 48M65 63 83 54 99 61M50 78 31 72 18 81" />
+                    <path class="crack-layer crack-layer-3" d="M72 38 88 27 102 31M56 91 75 99 82 117M43 111 31 121M83 54 88 42" />
+                  </svg>
+                  <span class="ball-fragment fragment-1"></span><span class="ball-fragment fragment-2"></span>
+                  <span class="ball-fragment fragment-3"></span><span class="ball-fragment fragment-4"></span>
+                  <span class="ball-fragment fragment-5"></span><span class="ball-fragment fragment-6"></span>
+                  <span class="ball-fragment fragment-7"></span><span class="ball-fragment fragment-8"></span>
+                </button>
+                <div id="crackHint" style="margin-top: 16px; font-weight: 800; color: #e8ddeb">
+                  แตะลูกบอลให้แตก ✨
                 </div>
               </div>
               <div class="card reveal-card" id="revealCard">
