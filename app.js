@@ -94,11 +94,16 @@ function renderMemoriesFromConfig() {
 
 function renderExperienceContent() {
   const {birthday,cake,final,features}=experienceConfig;
-  document.getElementById('birthdayName').textContent=birthday.name;
+  const birthdayName=document.getElementById('birthdayName');
+  birthdayName.textContent=birthday.name;
+  birthdayName.style.fontSize=birthday.name.length>14?'.58em':birthday.name.length>10?'.7em':birthday.name.length>7?'.82em':'1em';
+  document.getElementById('introIcon').textContent=birthday.introIcon;
   document.getElementById('introLead').textContent=formatConfigText(birthday.introLead);
   document.getElementById('cakeTitle').textContent=formatConfigText(cake.title);
   document.getElementById('cakeInstruction').textContent=formatConfigText(cake.instruction);
-  document.getElementById('cakeTopText').textContent=formatConfigText(cake.topText);
+  const cakeTopText=document.getElementById('cakeTopText');
+  cakeTopText.textContent=formatConfigText(cake.topText);
+  cakeTopText.style.fontSize=cakeTopText.textContent.length>24?'14px':cakeTopText.textContent.length>18?'16px':'20px';
   document.getElementById('cakeBottomText').textContent=formatConfigText(cake.bottomText);
   const avatar=document.getElementById('birthdayAvatar');avatar.src=birthday.avatarUrl;avatar.alt=birthday.avatarAlt;
   document.getElementById('birthdayCardTitle').textContent=formatConfigText(birthday.card.title);
@@ -116,9 +121,9 @@ function renderExperienceContent() {
 
 renderExperienceContent();
 
-function applyExperienceConfig(nextConfig,{restart=true}={}) {
+function applyExperienceConfig(nextConfig,{restart=true,allowInvalid=false}={}) {
   const validation=window.validateExperienceConfig(nextConfig);
-  if(!validation.valid) return validation;
+  if(!validation.valid&&!allowInvalid) return validation;
   setRuntimeConfig(nextConfig);
   renderExperienceContent();
   renderCandles();
@@ -130,7 +135,7 @@ function applyExperienceConfig(nextConfig,{restart=true}={}) {
 window.applyExperienceConfig=applyExperienceConfig;
 window.addEventListener('message',event=>{
   if(event.source!==window.parent || event.data?.type!=='HBD_PREVIEW_CONFIG') return;
-  const validation=applyExperienceConfig(event.data.config);
+  const validation=applyExperienceConfig(event.data.config,{allowInvalid:true});
   window.parent.postMessage({type:'HBD_PREVIEW_RESULT',validation},'*');
 });
 
@@ -203,9 +208,17 @@ function renderCandles() {
 }
 renderCandles();
 
+function setBlowMeter(value) {
+  const percent=Math.min(100,Math.max(0,Math.round(Number(value)||0)));
+  document.getElementById('blowMeter').style.width=`${percent}%`;
+  document.getElementById('blowPercent').textContent=`${percent}%`;
+  document.getElementById('blowMeterTrack').setAttribute('aria-valuenow',percent);
+}
+
 function blowSuccess() {
   if(state.blowCompleted) return;
   state.blowCompleted=true;
+  setBlowMeter(100);
   stopHoldBlow();
   stopMic();
   const candles=[...document.querySelectorAll('.candle')];
@@ -229,13 +242,13 @@ function startHoldBlow() {
   blowing=true; state.holdValue=0;
   document.getElementById('blowStatus').textContent='กำลังเป่า... 💨';
   state.holdTimer=setInterval(()=>{
-    state.holdValue+=7; document.getElementById('blowMeter').style.width=Math.min(100,state.holdValue)+'%';
+    state.holdValue+=7; setBlowMeter(state.holdValue);
     if(state.holdValue>=100) { stopHoldBlow(); blowSuccess(); }
   },70);
 }
 function stopHoldBlow() {
   blowing=false;clearInterval(state.holdTimer);state.holdTimer=null;
-  if(state.holdValue<100) { state.holdValue=0; document.getElementById('blowMeter').style.width='0%'; }
+  if(state.holdValue<100) { state.holdValue=0; setBlowMeter(0); }
 }
 
 async function enableMic() {
@@ -299,7 +312,7 @@ function monitorMic() {
   let sum=0; for(const v of buf){const n=(v-128)/128;sum+=n*n;}
   const rms=Math.sqrt(sum/buf.length);
   const pct=Math.min(100,Math.max(2,rms/MIC_CONFIG.threshold*72));
-  document.getElementById('blowMeter').style.width=pct+'%';
+  setBlowMeter(pct);
   if(rms>MIC_CONFIG.threshold) sustained++; else sustained=Math.max(0,sustained-1);
   if(sustained>=MIC_CONFIG.requiredFrames) { blowSuccess(); return; }
   state.micRAF=requestAnimationFrame(monitorMic);
@@ -500,7 +513,7 @@ function celebrate(count=35) {
 function restartExperience() {
   stopMic(); clearInterval(state.melodyTimer);
   state.score=0;state.qIndex=0;state.picks=0;state.used=0;state.gifts=[];state.boxOpened=false;state.blowCompleted=false;state.crackCount=0;state.finalOpened=false;
-  renderCandles();document.getElementById('blowMeter').style.width='0%';document.getElementById('blowStatus').textContent='';
+  renderCandles();setBlowMeter(0);document.getElementById('blowStatus').textContent='';
   const finalButton=document.getElementById('finalSurpriseBtn');
   finalButton.disabled=false;
   finalButton.hidden=false;

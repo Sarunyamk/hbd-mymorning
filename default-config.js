@@ -3,6 +3,7 @@ const DEFAULT_EXPERIENCE_CONFIG = {
   birthday: {
     name: 'Chaw',
     age: 32,
+    introIcon: '🎂',
     introLead: 'วันนี้ไม่อยากให้เป็นแค่วันธรรมดา เลยทำอะไรเล็ก ๆ ให้ลองเล่นดู 🎁',
     avatarUrl: 'assets/chaw-birthday-avatar.png',
     avatarAlt: 'Chaw สวมหมวกวันเกิด',

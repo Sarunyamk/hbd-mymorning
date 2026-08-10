@@ -7,3 +7,6 @@
 html,body{overflow-x:hidden}.builder-layout,.editor-panel,.settings-tabs{min-width:0;max-width:100%}
 @media(max-width:650px){.settings-header{overflow:hidden}.header-actions{grid-template-columns:repeat(4,minmax(0,1fr))}.header-actions button{width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis}.settings-tabs{width:100%}}
 .settings-tabs{scrollbar-width:none}.settings-tabs::-webkit-scrollbar{display:none}
+.settings-tabs button.feature-off{opacity:.42;filter:saturate(.35)}
+.conditional-note{padding:16px;border:1px solid rgba(126,228,196,.26);border-radius:16px;background:rgba(126,228,196,.07);display:flex;flex-direction:column;gap:5px}.conditional-note b{font-size:13px;color:#a9f2db}.conditional-note span{font-size:11px;color:var(--muted)}
+.conditional-note[hidden]{display:none}

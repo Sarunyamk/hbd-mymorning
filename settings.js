@@ -52,6 +52,10 @@ function updateDerivedUi(){
   document.getElementById('candleValue').textContent=draftConfig.cake.candleCount;
   document.getElementById('cakeTopPreview').textContent=formatTemplate(draftConfig.cake.topText);
   document.getElementById('cakeBottomPreview').textContent=formatTemplate(draftConfig.cake.bottomText);
+  const quizEnabled=Boolean(draftConfig.features.quizEnabled);
+  document.getElementById('quizCardFields').hidden=!quizEnabled;
+  document.getElementById('noQuizCardNote').hidden=quizEnabled;
+  document.querySelector('[data-tab="quiz"]').classList.toggle('feature-off',!quizEnabled);
 }
 
 function showValidation(){
@@ -66,7 +70,7 @@ function showValidation(){
   else{
     summary.hidden=false;
     const visible=validation.errors.slice(0,4).map(error=>`• ${error.message}`).join('<br>');
-    summary.innerHTML=`<b>ยัง Preview ไม่ได้ ${validation.errors.length} จุด</b><br>${visible}`;
+    summary.innerHTML=`<b>พบข้อมูลที่ควรแก้ ${validation.errors.length} จุด — Preview ยังดูได้</b><br>${visible}`;
   }
   return validation;
 }
@@ -85,8 +89,7 @@ function saveDraft(){
 }
 function sendPreview(){
   const validation=showValidation();
-  if(!validation.valid){document.getElementById('previewStatus').textContent='แก้ข้อมูลที่ผิดก่อน Preview';return;}
-  document.getElementById('previewStatus').textContent='กำลังอัปเดต...';
+  document.getElementById('previewStatus').textContent=validation.valid?'กำลังอัปเดต...':`กำลัง Preview พร้อมคำเตือน ${validation.errors.length} จุด...`;
   previewFrame.contentWindow?.postMessage({type:'HBD_PREVIEW_CONFIG',config:clone(draftConfig)},'*');
 }
 
@@ -108,7 +111,8 @@ document.getElementById('previewBtn').addEventListener('click',()=>{sendPreview(
 previewFrame.addEventListener('load',()=>setTimeout(sendPreview,120));
 window.addEventListener('message',event=>{
   if(event.source!==previewFrame.contentWindow||event.data?.type!=='HBD_PREVIEW_RESULT')return;
-  document.getElementById('previewStatus').textContent=event.data.validation?.valid?'Preview อัปเดตแล้ว':'Preview ไม่สำเร็จ';
+  const validation=event.data.validation;
+  document.getElementById('previewStatus').textContent=validation?.valid?'Preview อัปเดตแล้ว':`Preview อัปเดตแล้ว • มีคำเตือน ${validation?.errors?.length||0} จุด`;
 });
 
 document.getElementById('resetBtn').addEventListener('click',()=>{

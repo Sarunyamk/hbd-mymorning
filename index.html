@@ -75,7 +75,7 @@
             </div>
 
             <section class="scene active" id="scene-intro">
-              <div class="intro-orb"></div>
+              <div class="intro-cake-icon" id="introIcon" aria-hidden="true"></div>
               <h1 class="display gradient-text">
                 Happy<br />Birthday ✨
                 <span class="birthday-name" id="birthdayName"></span>
@@ -105,7 +105,10 @@
                 </div>
               </div>
 
-              <div class="blow-meter"><span id="blowMeter"></span></div>
+              <div class="blow-meter-label">
+                <span>แรงลม / ความคืบหน้า</span><b id="blowPercent">0%</b>
+              </div>
+              <div class="blow-meter" id="blowMeterTrack" role="progressbar" aria-label="ความคืบหน้าการเป่า" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="blowMeter"></span></div>
               <div class="buttons">
                 <button class="secondary" id="micBtn" onclick="enableMic()">
                   🎙️ เปิดไมค์เพื่อเป่าจริง
