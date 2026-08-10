@@ -1,0 +1,1833 @@
+# HBD My Love — Product, UX & Software Requirements Specification
+
+## 1. Document Purpose
+
+เอกสารนี้เป็น Master Specification สำหรับพัฒนาเว็บไซต์วันเกิดแบบ Interactive สำหรับคนพิเศษ โดยรวมทั้ง Product Requirements, UX Flow, Interaction Design, Animation Direction และ Software Requirements ไว้ในเอกสารเดียวกัน
+
+เว็บไซต์นี้ไม่ควรเป็นเพียงหน้าเว็บอวยพรวันเกิดทั่วไป แต่ต้องให้ความรู้สึกเหมือนผู้ใช้กำลังเล่น **Birthday Mini Game / Interactive Gift Experience** ที่ค่อย ๆ เปิดเผย Surprise ทีละขั้น
+
+ลำดับประสบการณ์หลัก:
+
+```text
+Birthday Intro
+      ↓
+Birthday Music
+      ↓
+Birthday Cake
+      ↓
+Blow Candle Interaction
+      ↓
+Birthday Message
+      ↓
+Birthday Quiz
+      ↓
+Earn Gift Picks
+      ↓
+Mystery Gift Box
+      ↓
+Choose Mystery Balls
+      ↓
+Reveal Gifts
+      ↓
+Gift Collection
+      ↓
+Final Birthday Message
+```
+
+หลักสำคัญของโปรเจกต์คือ:
+
+> ผู้ใช้ต้องรู้สึกว่า “กำลังค้นพบ Surprise ทีละขั้น” ไม่ใช่แค่กด Next ไปเรื่อย ๆ
+
+---
+
+## 2. Project Vision
+
+**ชื่อโปรเจกต์:** HBD My Love  
+**ประเภท:** Mobile-first Interactive Birthday Website
+
+วัตถุประสงค์คือสร้างเว็บไซต์ส่วนตัวสำหรับอวยพรวันเกิด โดยผสมระหว่าง:
+
+- Birthday Greeting
+- Animation
+- Interactive Experience
+- Mini Game
+- Quiz
+- Gift Selection
+- Surprise Reveal
+
+เป้าหมายด้านอารมณ์ของ User Journey:
+
+```text
+Curiosity
+   ↓
+Cute / Warm
+   ↓
+Fun
+   ↓
+Challenge
+   ↓
+Anticipation
+   ↓
+Surprise
+   ↓
+Excitement
+   ↓
+Emotional Ending
+```
+
+เว็บไซต์ควรให้ความรู้สึกว่าเจ้าของเว็บ “ตั้งใจทำประสบการณ์นี้ขึ้นมาเฉพาะสำหรับผู้รับ”
+
+---
+
+## 3. Target Platform
+
+เว็บไซต์ต้องออกแบบแบบ **Mobile First**
+
+Primary target:
+
+- iPhone
+- Android
+- Mobile Browser
+
+Target viewport หลัก:
+
+- 375 × 812
+- 390 × 844
+- 393 × 852
+- 430 × 932
+
+Desktop สามารถใช้งานได้ แต่ไม่ต้องออกแบบเป็น Desktop Application เต็มรูปแบบ ให้แสดงตัว Experience ขนาดประมาณมือถืออยู่กลางหน้าจอ เช่น `max-width: 430px` และมี Background ภายนอกที่เข้ากับ Theme
+
+---
+
+## 4. Recommended Technology Stack
+
+### Frontend
+
+- React
+- TypeScript
+- Vite
+
+### Animation
+
+- Framer Motion
+
+### Styling
+
+- Tailwind CSS หรือ CSS Modules
+- ให้เลือกแนวทางเดียวตลอดโปรเจกต์
+
+### Audio
+
+- Howler.js
+
+### Microphone / Blow Detection
+
+- Web Audio API
+- `navigator.mediaDevices.getUserMedia()`
+- `AudioContext`
+- `AnalyserNode`
+
+### Celebration Effects
+
+- canvas-confetti
+
+### Global State
+
+- Zustand
+
+### Persistence
+
+- localStorage
+
+### Backend
+
+Version แรก **ไม่จำเป็นต้องมี Backend**
+
+---
+
+## 5. Design Direction
+
+Visual Style:
+
+**Cute + Modern + Magical + Romantic + Slightly Mysterious**
+
+ไม่ควรออกแบบหวานหรือเด็กจนเกินไป ควรให้ความรู้สึกประมาณ:
+
+- ✨ Magic
+- 🎁 Surprise
+- 🌙 Dreamy
+- 🎂 Birthday
+- 💖 Love
+- 🎊 Celebration
+
+แนวสีหลัก:
+
+- Dark Navy
+- Midnight Purple
+- Lavender
+- Soft Pink
+- Peach
+- Warm Gold
+- Soft White
+
+Background อาจเป็น Deep Navy → Purple → Soft Magenta และมี Glow, Sparkle, Light Particle แบบบาง ๆ
+
+### Ambient Animation
+
+ตลอด Experience สามารถมี:
+
+- ดาวเล็ก
+- Sparkle
+- Floating Heart
+- Light Particle
+- Glow Orb
+- Balloon
+- Shooting Star
+- Confetti เฉพาะบางจังหวะ
+
+Ambient Animation ต้องเคลื่อนไหวช้าและไม่แย่งความสนใจจาก Main Interaction
+
+---
+
+## 6. Navigation Philosophy
+
+เว็บไซต์นี้ **ไม่ควรมี Navigation Bar แบบเว็บทั่วไป** เช่น Home / About / Quiz / Gift
+
+ประสบการณ์ควรเป็น Linear Journey:
+
+```text
+Scene 1
+  ↓
+Scene 2
+  ↓
+Scene 3
+  ↓
+...
+```
+
+แต่ละ Scene ควบคุมด้วย Game State และ Transition ที่ต่อเนื่องกัน
+
+---
+
+## 7. Complete User Journey
+
+User Journey หลักต้องเป็นดังนี้:
+
+```text
+User เปิด Link
+       ↓
+Birthday Intro Animation
+       ↓
+User กด Start
+       ↓
+เพลง Happy Birthday เริ่มเล่น
+       ↓
+Birthday Cake ปรากฏ
+       ↓
+User อธิษฐาน
+       ↓
+User เป่าเทียน
+       ↓
+ระบบตรวจจับการเป่า
+       ↓
+ไฟเทียนดับ
+       ↓
+Celebration Animation
+       ↓
+Birthday Greeting Card
+       ↓
+ข้อความชวนเล่น Quiz ก่อนเปิดของขวัญ
+       ↓
+Quiz 10 ข้อ
+       ↓
+ตอบถูกแต่ละข้อ = ได้สิทธิ์เลือกของขวัญ 1 ครั้ง
+       ↓
+Quiz Result
+       ↓
+เช่น 8/10 = ได้เลือกของขวัญ 8 ครั้ง
+       ↓
+Mystery Gift Box
+       ↓
+กล่องเปิด
+       ↓
+พบ Mystery Balls 20 ลูก
+       ↓
+แต่ละลูกซ่อนของขวัญ 1 อย่าง
+       ↓
+User เลือกลูกบอลทีละลูก
+       ↓
+ลูกบอลลอยขึ้น
+       ↓
+Animation เปิดลูกบอล
+       ↓
+Reveal Gift
+       ↓
+Gift ถูกเก็บเข้า Collection
+       ↓
+เลือกต่อจนครบสิทธิ์
+       ↓
+Gift Collection / Coupon Summary
+       ↓
+Final Birthday Message
+       ↓
+Final Celebration
+```
+
+---
+
+# 8. Scene Specifications
+
+## 8.1 Scene 01 — Loading
+
+เมื่อเปิดเว็บไซต์ ให้มี Loading Scene สั้น ๆ เพื่อโหลด Asset สำคัญก่อน เช่น:
+
+- Font
+- Main Music
+- Sound Effects ที่จำเป็น
+- Cake Asset
+- Gift Box Asset
+- Mystery Ball Asset
+
+ข้อความตัวอย่าง:
+
+```text
+✨ Preparing something special...
+```
+
+หรือ
+
+```text
+🎁 Loading your surprise...
+```
+
+Loading ต้องไม่ยาวเกินความจำเป็น และควรแสดง Progress แบบเรียบง่ายถ้าโหลด Asset หลายไฟล์
+
+---
+
+## 8.2 Scene 02 — Birthday Intro
+
+หลัง Loading หน้าจอเริ่มมืด ยังไม่เปิดเพลงเพราะ Browser หลายตัวไม่อนุญาต Auto-play ก่อน User Interaction
+
+### Intro Sequence
+
+1. เริ่มจากหน้าจอมืด
+2. มี Light Particle เล็ก ๆ ปรากฏ
+3. มี Sparkle เพิ่มทีละน้อย
+4. ข้อความ `Today is...` Fade ขึ้นมา
+5. พักประมาณ 800–1200 ms
+6. ข้อความ `a very special day.` ปรากฏ
+7. พักประมาณ 1000 ms
+8. ข้อความ Fade Out
+9. Title ใหญ่ `HAPPY BIRTHDAY` หรือ `Happy Birthday [NAME] ✨` ปรากฏ
+10. ใช้ Scale, Fade, Blur-to-clear, Glow และ Sparkle เล็ก ๆ
+11. ข้อความ `I made something for you 🎁`
+12. แสดงปุ่ม `Tap to begin`
+
+### Start Button
+
+ปุ่มควรมี Pulse เบา ๆ:
+
+```text
+scale 1 → 1.03 → 1
+```
+
+เมื่อแตะ:
+
+- Button scale down
+- Glow flash
+- UI pop sound
+- Initialize AudioContext
+- เริ่ม Background Music ด้วย Fade In 1–2 วินาที
+
+Music Toggle ต้องอยู่มุมบนและสามารถเปิด/ปิดได้ตลอด Experience
+
+---
+
+## 8.3 Transition Intro → Cake
+
+เมื่อกด Start ให้ใช้ Transition แบบมีความรู้สึก Magic เช่น:
+
+```text
+Background zoom
+       ↓
+Sparkle burst
+       ↓
+Screen fade
+       ↓
+Cake slide up / Spotlight
+```
+
+Cake ต้องกลายเป็น Hero Object ของ Scene ถัดไป
+
+---
+
+## 8.4 Scene 03 — Birthday Cake
+
+กลางหน้าจอเป็น Birthday Cake Illustration หรือ SVG ที่ดูน่ารักและมีคุณภาพ ไม่ควรใช้ Emoji Cake เป็น Final Artwork
+
+องค์ประกอบ:
+
+- Cake Layers
+- Cream
+- Decoration
+- Plate
+- Candles
+- Flame
+- Glow
+
+### Flame Animation
+
+แต่ละ Flame ต้องเคลื่อนไหวไม่พร้อมกัน เพื่อให้ Organic:
+
+- scale
+- rotation
+- opacity
+- skew
+
+เช่น Flame 1 duration 0.9s, Flame 2 duration 1.1s, Flame 3 duration 0.8s
+
+### Make a Wish
+
+เมื่อ Cake ปรากฏ:
+
+```text
+Close your eyes...
+```
+
+จากนั้น:
+
+```text
+Make a wish ✨
+```
+
+เว้นช่วงให้ผู้ใช้มีเวลา ก่อนเปลี่ยนเป็น:
+
+```text
+When you're ready...
+blow the candles 💨
+```
+
+---
+
+## 8.5 Microphone Permission UX
+
+ก่อน Browser Permission Popup ต้องมีคำอธิบาย เช่น:
+
+```text
+Want to blow the candles for real? 🎂
+
+Allow microphone access
+and blow gently toward your phone.
+```
+
+Button:
+
+```text
+Enable Microphone
+```
+
+ไม่ควรขอ Permission ทันทีโดยไม่มีคำอธิบาย
+
+---
+
+## 8.6 Blow Detection
+
+Flow:
+
+```text
+Microphone
+    ↓
+MediaStream
+    ↓
+AudioContext
+    ↓
+AnalyserNode
+    ↓
+Calculate Audio Energy
+    ↓
+Detect Sustained Blow
+```
+
+ไม่ควรตรวจแค่ Peak เสียงครั้งเดียว เพราะเสียงพูดหรือเสียงกระแทกอาจ Trigger ได้
+
+เงื่อนไขเบื้องต้น:
+
+- Average amplitude เกิน Threshold
+- ต่อเนื่องประมาณ 300–600 ms
+- หากต้องการแม่นขึ้นอาจวิเคราะห์ Frequency Pattern เพิ่ม
+
+### Real-time Feedback
+
+ขณะเป่า:
+
+- แสดง Air Particle วิ่งไปหา Cake
+- Flame เริ่มเอียงตามความแรง
+- ใช้ Progress หรือ Feedback ขนาดเล็กเพื่อให้รู้ว่า Microphone กำลังรับเสียง
+
+### Candle Extinguish
+
+เมื่อ Detect Blow สำเร็จ:
+
+- ดับไฟทีละดวง ไม่ดับพร้อมกันทั้งหมด
+- Delay ระหว่างเทียนประมาณ 80–150 ms
+- Flame scale down + opacity → 0
+- หลังดับให้มี Smoke Particle ลอยขึ้น
+
+---
+
+## 8.7 Blow Fallback
+
+ต้องมี Fallback สำหรับกรณี:
+
+- User ไม่ Allow Microphone
+- Browser ไม่รองรับ
+- Detection ทำงานไม่ดี
+- สถานที่เสียงดัง
+
+แสดง:
+
+```text
+Can't use the microphone?
+Hold here to blow 💨
+```
+
+เมื่อกดค้าง:
+
+- Progress Ring เต็มใน 1–1.5 วินาที
+- Air Particle วิ่งเข้า Cake
+- ไฟดับด้วย Sequence เดียวกับ Microphone Mode
+
+---
+
+## 8.8 Candle Completion Celebration
+
+เมื่อเทียนดับครบ:
+
+1. Pause 300–500 ms
+2. Cake อยู่ในความมืดเล็กน้อย
+3. Trigger Celebration
+
+Effects:
+
+- Confetti
+- Sparkle
+- Balloon
+- Glow
+- Celebration Sound
+
+ข้อความ:
+
+```text
+YAYYYYY! 🎉
+```
+
+หรือ
+
+```text
+Wish made! ✨
+```
+
+---
+
+## 8.9 Scene 04 — Birthday Greeting Card
+
+หลัง Celebration ให้ Cake เลื่อนลงหรือ Blur แล้ว Greeting Card ลอยขึ้นจากด้านล่างด้วย Spring Motion
+
+ตัวอย่าง Motion:
+
+```text
+translateY +80
+opacity 0
+scale 0.95
+        ↓
+translateY 0
+opacity 1
+scale 1
+```
+
+Card เป็นจุดอวยพรหลัก และข้อความต้องแก้ไขได้จาก Data File เช่น `messages.ts`
+
+หลังอ่าน Greeting แล้ว ให้เปลี่ยนอารมณ์เป็น playful:
+
+```text
+แต่เดี๋ยวก่อน... 👀
+```
+
+Pause แล้วตามด้วย:
+
+```text
+ของขวัญยังเปิดไม่ได้ง่ายขนาดนั้น 😏
+```
+
+และ:
+
+```text
+ก่อนที่จะเปิดของขวัญ
+ลองตอบคำถามเกี่ยวกับเราดูหน่อย
+```
+
+อธิบายกติกา:
+
+```text
+ตอบถูก 1 ข้อ = ได้สิทธิ์เลือกของขวัญ 1 ครั้ง 🎁
+```
+
+---
+
+# 9. Quiz System
+
+## 9.1 Quiz Rule
+
+มีทั้งหมด 10 ข้อ
+
+```text
+Correct Answer = +1 Gift Pick
+Wrong Answer = 0 Gift Pick
+```
+
+ตัวอย่าง:
+
+```text
+ตอบถูก 8 / 10
+=
+เลือก Mystery Ball ได้ 8 ลูก
+```
+
+### Quiz Intro
+
+```text
+10 Questions
+
+Every correct answer
+earns you one gift pick 🎁
+
+How well do you know us? 😏
+```
+
+Button:
+
+```text
+LET'S GO
+```
+
+---
+
+## 9.2 Quiz UI
+
+```text
+Question 3 / 10
+
+──────────────
+
+คำถาม
+
+[ Answer A ]
+[ Answer B ]
+[ Answer C ]
+[ Answer D ]
+
+──────────────
+
+🎁 Gift Picks: 2
+```
+
+ด้านบนมี Progress Bar เช่น:
+
+```text
+● ● ● ● ○ ○ ○ ○ ○ ○
+```
+
+หรือ
+
+```text
+████████░░░░░
+```
+
+---
+
+## 9.3 Question Data Structure
+
+```ts
+interface Question {
+  id: string;
+  question: string;
+  choices: Choice[];
+  correctChoiceId: string;
+  messageCorrect?: string;
+  messageWrong?: string;
+}
+```
+
+คำถามควรแก้ได้จาก Data File และควรเป็นเรื่องส่วนตัว เช่น:
+
+- ร้านที่เราไปกินด้วยกันครั้งแรกคือร้านอะไร?
+- อาหารที่ฉันชอบที่สุดคืออะไร?
+- เราเจอกันครั้งแรกที่ไหน?
+- เพลงที่เราชอบฟังด้วยกันคือเพลงอะไร?
+- ทริปไหนที่ฉันชอบที่สุด?
+
+---
+
+## 9.4 Correct Answer Interaction
+
+เมื่อเลือกถูก:
+
+- Answer Button เปลี่ยนเป็น Success State
+- แสดง `✓ Correct!`
+- Sparkle แตกเล็กน้อย
+- แสดง `+1 🎁`
+- Gift Ticket / Gift Icon บินไปยัง Gift Counter
+- Gift Counter Bounce / Glow
+
+User ต้องรู้สึกว่าได้รับสิทธิ์จริง ไม่ใช่แค่คะแนนตัวเลข
+
+---
+
+## 9.5 Wrong Answer Interaction
+
+เมื่อผิด:
+
+- Card Shake เบา ๆ
+- ข้อความน่ารัก เช่น `Oops 😝` หรือ `เกือบแล้ววว 😂`
+- Highlight คำตอบถูกได้
+- ไม่เพิ่ม Gift Pick
+
+ไม่ควรทำให้ User รู้สึกเหมือนสอบตก
+
+---
+
+## 9.6 Question Transition
+
+หลังตอบแล้วอย่าเปลี่ยนข้อทันที ให้ Feedback ประมาณ 800–1500 ms แล้ว Slide Card ออกซ้าย และนำ Question ใหม่ Slide เข้าจากขวา
+
+---
+
+## 9.7 Quiz Completion
+
+หลังข้อที่ 10 ห้ามเข้า Gift Game ทันที
+
+แสดง Result:
+
+```text
+🎉 Quiz Complete 🎉
+
+You got
+
+8 / 10
+
+correct!
+```
+
+จากนั้น Reveal Reward:
+
+```text
+That means...
+
+🎁 8 GIFT PICKS 🎁
+```
+
+ตัวเลขต้อง Animate ใหญ่และเป็น Moment สำคัญ
+
+Button:
+
+```text
+OPEN YOUR GIFTS
+```
+
+เมื่อกด อาจเปลี่ยน Music Mood จาก Cute Birthday → Mystery / Exciting เล็กน้อย
+
+---
+
+# 10. Mystery Gift Game
+
+## 10.1 Scene 06 — Mystery Gift Room
+
+Background มืดลงเล็กน้อย Particle ลดลง และ Spotlight ปรากฏตรงกลาง
+
+Gift Box ขนาดใหญ่ตกลงมา แล้วมี Screen Shake เล็ก ๆ ตอน Landing
+
+Main Gift Box ต้องเป็น Hero Object และมี:
+
+- Ribbon
+- Bow
+- Glow
+- Decorative Edge
+- Transparent / Glass Section
+
+Requirement สำคัญ:
+
+> ผู้ใช้สามารถเห็น Mystery Balls หลายสีบางส่วนอยู่ด้านในผ่านกล่องใส ก่อนเปิดจริง
+
+เพื่อให้เกิด Curiosity ว่าข้างในคืออะไร
+
+---
+
+## 10.2 Gift Box Opening
+
+ข้อความ:
+
+```text
+Tap the box 👀
+```
+
+เมื่อกด:
+
+1. กล่อง Shake เบา ๆ
+2. Pause
+3. Shake แรงขึ้นเล็กน้อย
+4. Bow หลุดหรือขยับ
+5. ฝาค่อย ๆ เปิด
+6. Light / Sparkle พุ่งออกมา
+7. Reveal Mystery Balls ภายใน
+
+---
+
+## 10.3 Mystery Balls
+
+ภายในมีกลม Mystery Ball จำนวน **20 ลูก**
+
+```text
+20 Balls = 20 Gifts
+```
+
+แต่ละลูกซ่อน Gift 1 อย่าง
+
+User ต้องไม่เห็น:
+
+- Number
+- ID
+- Gift Name
+- Probability
+- Hint ของ Gift
+
+User เห็นแค่:
+
+- สี
+- Pattern
+- Glow
+- ตำแหน่ง
+
+สีตัวอย่าง:
+
+- Pink
+- Purple
+- Blue
+- Yellow
+- Mint
+- Peach
+- Red
+- Lavender
+
+Pattern เล็ก ๆ เช่น Star / Heart / Sparkle สามารถมีได้ แต่ต้องไม่บ่งบอก Gift
+
+---
+
+## 10.4 Ball Positioning
+
+Requirement สำคัญ:
+
+**Ball ห้ามเรียงเป็น Grid**
+
+ต้องเหมือนลูกบอลจริงที่กระจายอยู่ในกล่อง:
+
+```text
+   ●      ● ●
+
+      ●
+
+ ●  ●       ●
+
+       ● ●
+
+   ●      ●
+
+ ●          ●
+```
+
+สามารถใช้:
+
+- Absolute Position
+- Predefined position slots แล้ว Shuffle
+- Random Rotation
+- Slight Overlap
+- Different Scale / Depth
+
+แนะนำ Predefined Safe Slots + Shuffle มากกว่า Pure Random เพื่อป้องกัน Ball ซ้อนกันเต็ม ๆ หรือหลุดขอบ
+
+---
+
+## 10.5 Gift Mapping Rule
+
+แนะนำให้ Gift ถูก Assign ให้ Ball **ก่อน User เลือก**
+
+ตัวอย่าง:
+
+```text
+Ball A → Gift 01
+Ball B → Gift 02
+Ball C → Gift 03
+...
+Ball T → Gift 20
+```
+
+สามารถ Randomize Mapping 1 ครั้งตอนเริ่ม Gift Game แล้วล็อก Mapping ไว้จนจบ Session
+
+ห้าม Random Gift หลัง User คลิก Ball เพราะจะทำให้ความรู้สึก “ของขวัญซ่อนอยู่ในลูกนี้จริง ๆ” หายไป
+
+---
+
+## 10.6 Ball Idle Animation
+
+ลูกบอลไม่ควรอยู่นิ่ง แต่ควรขยับแบบ subtle:
+
+- float up/down 2–4 px
+- rotate 1–3°
+- slight scale breathing
+
+แต่ละ Ball ใช้ Delay / Duration ไม่เท่ากัน เพื่อให้ดู Alive
+
+---
+
+## 10.7 Gift Pick Counter
+
+ด้านบนแสดง:
+
+```text
+Pick your gifts 🎁
+
+0 / 8
+```
+
+และ:
+
+```text
+8 picks remaining
+```
+
+เมื่อเลือก 1 ลูก:
+
+```text
+7 picks remaining
+```
+
+Rule:
+
+```text
+giftPickLimit = quizScore
+```
+
+ตัวอย่าง Quiz 8/10 → เลือกได้ 8 Ball เท่านั้น
+
+---
+
+# 11. Ball Selection & Reveal
+
+## 11.1 Selecting a Ball
+
+เมื่อ User แตะ Ball ห้ามเปิด Gift ทันที
+
+Sequence:
+
+1. Ball Glow
+2. Ball Scale ขึ้น
+3. Ball ขยับออกจากกล่อง
+4. ลูกอื่น Blur / Darken
+5. Background Darken
+6. Ball ลอยมาตรงกลาง Screen
+7. Pause เพื่อสร้าง Suspense
+
+---
+
+## 11.2 Suspense Sequence
+
+ตอน Ball อยู่กลางจอ:
+
+```text
+Pause 300–600ms
+   ↓
+Shake เบา ๆ
+   ↓
+Shake แรงขึ้น
+   ↓
+Light Leak / Sparkle
+   ↓
+Pause สั้น ๆ
+   ↓
+Open
+```
+
+Sound สามารถใช้ Tick / Spark / Low Rumble แบบน่ารัก
+
+เป้าหมายคือให้ User รู้สึกว่า “กำลังจะเปิดแล้ว”
+
+---
+
+## 11.3 Ball Opening Animation
+
+Ball สามารถ:
+
+- แตกเป็น 2 ซีก
+- แยกฝาครึ่งบน/ล่าง
+- มี Beam of Light ทะลุออกมา
+- มี Sparkle Burst
+
+จากนั้น Flash สั้น ๆ แล้ว Reveal Gift Card
+
+Timing ตัวอย่าง:
+
+```text
+Ball picked         0ms
+Ball fly            500ms
+Pause               300ms
+Shake               800ms
+Light appears       300ms
+Ball opens          400ms
+Gift reveal         500ms
+```
+
+รวมประมาณ 2–3 วินาทีต่อ Reveal
+
+---
+
+## 11.4 Gift Reveal Card
+
+ตัวอย่าง:
+
+```text
+╭────────────────────────╮
+│                        │
+│         YOU GOT        │
+│                        │
+│           🍣           │
+│                        │
+│      Sushi Dinner      │
+│                        │
+│   Dinner together ❤️   │
+│                        │
+╰────────────────────────╯
+```
+
+Gift Reveal เป็น Moment สำคัญ ต้องใช้:
+
+- Scale
+- Glow
+- Confetti
+- Particle
+- Sound
+
+---
+
+# 12. Gift Types & Rarity
+
+Gift สามารถเป็น:
+
+- Physical Gift
+- Food Coupon
+- Date Coupon
+- Activity Coupon
+- Special Message
+- Mystery Reward
+
+ตัวอย่าง 20 Gifts:
+
+1. Sushi Dinner
+2. Cafe Date
+3. Movie Night
+4. Cake
+5. Ice Cream
+6. Ramen Date
+7. Steak Dinner
+8. Shopping
+9. Photo Day
+10. Day Trip
+11. Plushie
+12. Game
+13. Headphones
+14. Clothes
+15. Event Ticket
+16. Love Letter
+17. Handmade Gift
+18. Surprise Date
+19. Mystery Gift
+20. Grand Prize
+
+### Gift Data Structure
+
+```ts
+interface Gift {
+  id: string;
+  name: string;
+  shortName: string;
+  description: string;
+  image?: string;
+  icon?: string;
+  type: "physical" | "coupon" | "activity" | "message";
+  rarity: "normal" | "rare" | "special";
+  couponText?: string;
+}
+```
+
+### Rarity
+
+- Normal
+- Rare
+- Special
+
+User ต้องไม่เห็น Rarity ก่อนเปิด
+
+#### Normal
+
+- Small Confetti
+- Standard Glow
+- Normal Gift Sound
+
+#### Rare
+
+- Background เปลี่ยนเล็กน้อย
+- Glow มากขึ้น
+- `✨ RARE GIFT ✨`
+- Confetti มากขึ้น
+
+#### Special
+
+ควรมีเพียง 1–2 ลูกจาก 20 ลูก
+
+Sequence:
+
+```text
+Ball opens
+ ↓
+Screen goes dark
+ ↓
+Music stops briefly
+ ↓
+Mystery / heartbeat sound
+ ↓
+Light appears
+ ↓
+SPECIAL GIFT
+ ↓
+Big Reveal
+```
+
+---
+
+# 13. Gift Collection
+
+หลัง Reveal Gift ให้มี Button เช่น:
+
+```text
+KEEP IT 🎁
+```
+
+หรือ
+
+```text
+ADD TO MY GIFTS
+```
+
+เมื่อกด:
+
+1. Gift Card ย่อขนาด
+2. บินไปมุมจอ
+3. Gift Collection Icon Bounce / Glow
+
+Gift Collection Icon:
+
+```text
+🎁 4
+```
+
+User สามารถกดดู Bottom Sheet / Drawer:
+
+```text
+My Gifts 🎁
+
+🍣 Sushi Dinner
+☕ Cafe Date
+🎬 Movie Night
+🍰 Cake
+```
+
+ระหว่าง Gift Game ไม่ควรบังคับเปิด Collection
+
+หลัง Reveal เสร็จ ให้กลับไป Gift Box และ Ball ที่เปิดแล้วต้องหายออก
+
+ตัวอย่าง:
+
+```text
+Before: 20 Balls
+After 1 pick: 19 Balls
+Counter: 1 / 8
+```
+
+ทำซ้ำจนครบสิทธิ์
+
+---
+
+# 14. End Gift Selection
+
+เมื่อ User ใช้สิทธิ์ครบ เช่น 8/8:
+
+1. ห้ามเลือก Ball ต่อ
+2. Pause เล็กน้อย
+3. แสดงข้อความ:
+
+```text
+That's all your picks 🎁
+```
+
+หรือ
+
+```text
+You found 8 gifts! ✨
+```
+
+Ball ที่ไม่ได้เลือก:
+
+- ลด Glow
+- Fade ลงเล็กน้อย
+- ค่อย ๆ กลับลงกล่อง
+- Gift Box ปิด
+
+จุดนี้ควรรักษาความรู้สึกว่า “ยังมีของอีกหลายลูกที่ไม่ได้เลือก” เพื่อให้ Journey มีความลุ้นย้อนหลัง
+
+---
+
+# 15. Gift Summary / Coupon Summary
+
+หลัง Gift Box ปิด ให้ Transition ไปหน้า:
+
+```text
+Your Birthday Gifts 🎁
+```
+
+Gift Cards ค่อย ๆ ปรากฏทีละใบด้วย Stagger Animation
+
+Mobile Layout อาจใช้ 2 Columns หรือ Vertical Cards ตาม Artwork
+
+### Coupon Card
+
+ตัวอย่าง:
+
+```text
+╭─────────────────────────╮
+│ 🎟 BIRTHDAY COUPON      │
+│                         │
+│       Sushi Dinner      │
+│                         │
+│ Valid: Anytime ❤️       │
+│                         │
+│       UNLOCKED ✓        │
+╰─────────────────────────╯
+```
+
+Version แรกไม่มี Backend จึงไม่จำเป็นต้องมี Redeem จริง
+
+Gift ที่ได้รับต้องเก็บใน localStorage เพื่อให้ Reload แล้วยังอยู่
+
+---
+
+# 16. Final Birthday Scene
+
+หลัง User ดู Gift Collection แล้ว มีข้อความ:
+
+```text
+There's one last thing...
+```
+
+Button:
+
+```text
+OPEN ❤️
+```
+
+เมื่อกด:
+
+- Music ลด Volume
+- Background มืดลง
+- Animation ช้าลง
+- Particle ลดลง
+
+ข้อความ Final ค่อย ๆ ขึ้นทีละประโยค เช่น:
+
+```text
+Happy Birthday 🎂
+```
+
+Pause
+
+```text
+I hope today made you smile.
+```
+
+Pause
+
+```text
+And I hope every gift
+reminds you how special you are.
+```
+
+จากนั้นแสดง Personal Message จริงจาก `messages.ts`
+
+หลังข้อความสุดท้าย Pause ประมาณ 1 วินาที แล้ว Trigger Celebration ใหญ่ที่สุดของเว็บ:
+
+- HAPPY BIRTHDAY ❤️
+- Large Confetti
+- Hearts
+- Sparkles
+- Firework-style particles
+- Music กลับมาดังขึ้นเล็กน้อย
+
+Ending:
+
+```text
+🎂 Happy Birthday [Name]
+
+Made with ❤️
+```
+
+Button:
+
+```text
+SEE MY GIFTS 🎁
+```
+
+และอาจมี:
+
+```text
+PLAY AGAIN
+```
+
+แต่ Play Again ต้องถามก่อน Reset เพื่อป้องกัน Gift หายจากการกดผิด
+
+---
+
+# 17. Global Application State
+
+```ts
+interface BirthdayGameState {
+  currentScene:
+    | "loading"
+    | "intro"
+    | "cake"
+    | "birthday-message"
+    | "quiz-intro"
+    | "quiz"
+    | "quiz-result"
+    | "gift-box"
+    | "gift-reveal"
+    | "gift-summary"
+    | "final";
+
+  currentQuestionIndex: number;
+  quizScore: number;
+  totalQuestions: number;
+
+  giftPickLimit: number;
+  giftPickUsed: number;
+
+  selectedGiftIds: string[];
+  openedBallIds: string[];
+
+  musicEnabled: boolean;
+  microphoneEnabled: boolean;
+}
+```
+
+Rule หลัก:
+
+```text
+giftPickLimit = quizScore
+```
+
+---
+
+# 18. Mystery Ball Data Structure
+
+```ts
+interface MysteryBall {
+  id: string;
+  color: string;
+  pattern?: string;
+  giftId: string;
+  position: {
+    x: number;
+    y: number;
+    rotation: number;
+    scale: number;
+  };
+  opened: boolean;
+}
+```
+
+Gift Mapping สามารถเป็น:
+
+### Fixed Mapping
+
+เหมาะกับการควบคุม Experience อย่างละเอียด
+
+### Randomized Once
+
+สุ่ม Gift 20 ชิ้นไปใส่ Ball 20 ลูกตอนเริ่ม Gift Scene แล้วล็อก Mapping ไว้จนจบ
+
+**Recommended:** Randomize Once + Persist Mapping ใน State/localStorage
+
+---
+
+# 19. Audio Design
+
+Audio Assets ที่ควรเตรียม:
+
+```text
+birthday-theme.mp3
+gift-theme.mp3
+ui-pop.mp3
+button-click.mp3
+candle-whoosh.mp3
+candle-success.mp3
+quiz-correct.mp3
+quiz-wrong.mp3
+ticket-earned.mp3
+gift-box-shake.mp3
+gift-box-open.mp3
+ball-pick.mp3
+ball-shake.mp3
+ball-open.mp3
+gift-normal.mp3
+gift-rare.mp3
+gift-special.mp3
+final-confetti.mp3
+```
+
+Sound ต้องไม่ดังเกินไป และมี Music Toggle ตลอด Journey
+
+---
+
+# 20. Haptic Feedback
+
+บน Browser ที่รองรับ สามารถใช้ `navigator.vibrate()` เป็น Enhancement เช่น:
+
+- Button: 20ms
+- Gift Box Landing: 40ms
+- Rare Gift: `30, 50, 30`
+
+ระบบต้องใช้งานได้แม้ไม่มี Vibration
+
+---
+
+# 21. Animation Principles
+
+Animation แบ่งเป็น 3 ระดับ:
+
+### Ambient
+
+- stars
+- floating particles
+- soft glow
+
+### Interaction
+
+- button press
+- ball touch
+- quiz answer
+- card transition
+
+### Celebration
+
+ใช้เฉพาะ Moment สำคัญ:
+
+- candle complete
+- quiz complete
+- gift box opening
+- rare/special gift
+- final birthday
+
+หลักสำคัญ:
+
+> ถ้าทุกอย่างอลังการหมด ไม่มีอะไรจะรู้สึกพิเศษ
+
+Animation Character:
+
+**Cute:** bounce, spring, small overshoot  
+**Cool:** blur, glow, light beam, smooth transitions  
+**Exciting:** pause, shake, flash, sound, reveal
+
+Surprise Timing Principle:
+
+```text
+Expectation
+ ↓
+Pause
+ ↓
+Suspense
+ ↓
+Reveal
+ ↓
+Celebration
+```
+
+---
+
+# 22. Accessibility & Fallbacks
+
+ระบบควรรองรับ:
+
+- Music On/Off
+- Microphone fallback
+- Reduced Motion ตาม Browser Setting
+- Text Contrast ที่อ่านง่าย
+- Touch target อย่างน้อยประมาณ 44px
+- ใช้งานได้แม้ Vibration ไม่รองรับ
+- ใช้งานได้แม้ Microphone ไม่รองรับ
+
+---
+
+# 23. Performance Requirements
+
+Animation ควรใช้ `transform` และ `opacity` เป็นหลัก
+
+หลีกเลี่ยงการ Animate `width`, `height`, `top`, `left` ต่อเนื่องถ้าไม่จำเป็น เพราะทำให้ Layout Reflow
+
+Preload Asset สำคัญ:
+
+- Cake
+- Gift Box
+- Mystery Ball
+- Main Audio
+- Common SFX
+
+Gift Images อื่น ๆ สามารถ Lazy Load ได้
+
+---
+
+# 24. Data & Configuration
+
+Version แรกไม่ต้องมี:
+
+- Database
+- Authentication
+- REST API
+- Account System
+
+Data ทั้งหมดอยู่ใน `src/data/`
+
+```text
+questions.ts
+gifts.ts
+messages.ts
+config.ts
+```
+
+Config ตัวอย่าง:
+
+```ts
+export const birthdayConfig = {
+  recipientName: "NAME",
+  totalQuestions: 10,
+  totalMysteryBalls: 20,
+  musicEnabled: true,
+  microphoneEnabled: true,
+  enableHaptic: true,
+};
+```
+
+ทุก Content สำคัญต้องแก้ได้จาก Data/Config โดยไม่แก้ Logic ของ Component
+
+---
+
+# 25. Suggested Project Structure
+
+```text
+src/
+├── assets/
+│   ├── audio/
+│   ├── cake/
+│   ├── gifts/
+│   ├── particles/
+│   └── ui/
+├── components/
+│   ├── common/
+│   │   ├── AnimatedText.tsx
+│   │   ├── MusicToggle.tsx
+│   │   ├── ConfettiEffect.tsx
+│   │   ├── SparkleBackground.tsx
+│   │   └── PageTransition.tsx
+│   ├── birthday/
+│   │   ├── BirthdayCake.tsx
+│   │   ├── Candle.tsx
+│   │   ├── Flame.tsx
+│   │   ├── BlowDetector.tsx
+│   │   └── BirthdayCard.tsx
+│   ├── quiz/
+│   │   ├── QuizCard.tsx
+│   │   ├── QuizProgress.tsx
+│   │   ├── AnswerButton.tsx
+│   │   └── GiftTicketCounter.tsx
+│   └── gifts/
+│       ├── MysteryGiftBox.tsx
+│       ├── MysteryBall.tsx
+│       ├── BallContainer.tsx
+│       ├── GiftReveal.tsx
+│       ├── GiftCard.tsx
+│       └── GiftCollection.tsx
+├── scenes/
+│   ├── LoadingScene.tsx
+│   ├── IntroScene.tsx
+│   ├── CakeScene.tsx
+│   ├── BirthdayMessageScene.tsx
+│   ├── QuizScene.tsx
+│   ├── QuizResultScene.tsx
+│   ├── GiftBoxScene.tsx
+│   ├── GiftSummaryScene.tsx
+│   └── FinalScene.tsx
+├── data/
+│   ├── questions.ts
+│   ├── gifts.ts
+│   ├── messages.ts
+│   └── config.ts
+├── hooks/
+│   ├── useAudio.ts
+│   ├── useBlowDetection.ts
+│   ├── useHaptic.ts
+│   └── useGamePersistence.ts
+├── store/
+│   └── birthdayStore.ts
+└── App.tsx
+```
+
+---
+
+# 26. Development Plan
+
+## Phase 1 — Core Architecture
+
+- React + TypeScript + Vite
+- Tailwind / Styling System
+- Framer Motion
+- Zustand
+- Scene Manager
+- Global Layout
+
+เป้าหมาย: Flow เดินได้ครบแบบ Placeholder ก่อน
+
+## Phase 2 — Intro Experience
+
+- Loading
+- Intro Animation
+- Tap to Start
+- Music
+- Scene Transition
+
+## Phase 3 — Cake Experience
+
+- Cake Illustration
+- Candles
+- Flame Animation
+- Make a Wish
+- Microphone Permission
+- Blow Detection
+- Hold-to-Blow Fallback
+- Candle Extinguish
+- Celebration
+
+## Phase 4 — Birthday Message
+
+- Greeting Card
+- Personal Message
+- Quiz Introduction
+
+## Phase 5 — Quiz Engine
+
+- 10 Questions
+- Answer Feedback
+- Score
+- Gift Pick Counter
+- Progress
+- Result
+
+## Phase 6 — Gift Box
+
+- Gift Box
+- Transparent Window
+- Opening Sequence
+- 20 Mystery Balls
+- Randomized Safe Positions
+- Gift Assignment
+- Gift Pick Limit
+
+## Phase 7 — Gift Reveal
+
+ส่วนนี้ต้อง Polish มากที่สุด:
+
+- Ball Select
+- Ball Fly
+- Background Dim/Blur
+- Suspense
+- Shake
+- Light Leak
+- Open
+- Gift Reveal
+- Rarity
+- Confetti
+- Add to Collection
+- Return to Box
+
+## Phase 8 — Gift Collection
+
+- Gift Inventory
+- Coupon Cards
+- Gift Summary
+- localStorage
+
+## Phase 9 — Final Scene
+
+- Final Personal Message
+- Music Transition
+- Final Confetti
+- Ending Screen
+- Replay / View Gifts
+
+## Phase 10 — Polish
+
+- Sound Timing
+- Animation Timing
+- Micro Interaction
+- Particles
+- Glow
+- Haptic
+- Performance
+- Responsive
+- Browser Testing
+
+---
+
+# 27. Acceptance Criteria
+
+ระบบถือว่าผ่าน Version 1 เมื่อ User สามารถทำ Journey นี้ได้ครบ:
+
+```text
+Open Website
+   ↓
+See Birthday Intro
+   ↓
+Tap Start
+   ↓
+Hear Music
+   ↓
+See Cake
+   ↓
+Blow Candles
+   ↓
+Candles Extinguish
+   ↓
+See Birthday Message
+   ↓
+Start Quiz
+   ↓
+Complete 10 Questions
+   ↓
+Receive N Gift Picks
+   ↓
+Open Gift Box
+   ↓
+See 20 Mixed Mystery Balls
+   ↓
+Pick N Balls
+   ↓
+Reveal Each Gift Individually
+   ↓
+Each Gift Goes Into Collection
+   ↓
+Finish All Picks
+   ↓
+See All Obtained Gifts / Coupons
+   ↓
+See Final Birthday Message
+   ↓
+Final Celebration
+```
+
+---
+
+# 28. Priority Order for AI Agent
+
+AI Agent ต้องให้ความสำคัญตามลำดับ:
+
+1. User Journey
+2. Interaction Quality
+3. Animation Timing
+4. Surprise / Reveal
+5. Visual Quality
+6. Sound Design
+7. Responsive Mobile UX
+8. Code Architecture
+
+Logic ของระบบค่อนข้างตรงไปตรงมา สิ่งที่ทำให้โปรเจกต์นี้ดีหรือไม่ดีคือรายละเอียดของ Interaction, Animation และ Surprise Timing
+
+---
+
+# 29. Core Product Principle
+
+ทุก Scene ควรตอบคำถามว่า:
+
+> “ตอนนี้ User กำลังลุ้นอะไรอยู่?”
+
+ตัวอย่าง:
+
+- Intro → เว็บนี้มีอะไร?
+- Cake → เป่าแล้วจะเกิดอะไร?
+- Quiz → ฉันจะตอบได้กี่ข้อ?
+- Result → ฉันจะได้เปิดกี่ลูก?
+- Gift Box → 20 ลูกนี้มีอะไรอยู่ข้างใน?
+- Ball → ลูกนี้จะเป็นอะไร?
+- Gift Collection → สรุปแล้วฉันได้อะไรบ้าง?
+- Final → มีอะไรจะพูดกับฉันอีก?
+
+ถ้าแต่ละช่วงตอบคำถามนี้ได้ Experience จะมีแรงดึงให้ User เล่นต่อจนจบ
+
+---
+
+# 30. Executive Prompt for AI Agent
+
+```text
+Build a mobile-first interactive birthday experience named “HBD My Love” using React + TypeScript + Vite.
+
+This project is not a normal birthday webpage. It should feel like a polished interactive mini-game designed specifically for one person.
+
+The user first sees a magical birthday intro and taps to begin. Birthday music starts and an animated birthday cake appears. The user should be able to blow into the phone microphone to extinguish the candles, with a press-and-hold fallback if microphone detection is unavailable.
+
+After the candles are extinguished, show a birthday celebration and a personal birthday greeting card.
+
+Before the recipient is allowed to open gifts, they must complete a 10-question personal quiz. Each correct answer gives one Gift Pick. For example, a score of 8/10 gives the user exactly 8 opportunities to choose gifts.
+
+After the quiz, transition into a large mystery gift box. Inside the box are exactly 20 colorful mystery balls. The balls must not be arranged as a clean grid. They should appear naturally mixed, scattered, partially overlapping and positioned at different depths inside the box.
+
+Each of the 20 balls represents exactly one of 20 gifts. Gift assignments should be determined before selection. The user must not see numbers, IDs or hints indicating which gift belongs to each ball.
+
+If the user earned 8 Gift Picks, they may select exactly 8 of the 20 balls.
+
+Each ball selection must be treated as an important reveal sequence. The selected ball should glow, rise out of the box, move toward the center of the screen, while the other balls and background become less prominent. The selected ball should pause, shake, emit light or particles, then open with a polished animation before revealing the gift.
+
+Revealed gifts are added to a persistent Gift Collection represented by a small gift-box icon. The user returns to the mystery box and continues selecting balls until all Gift Picks are used.
+
+After all selections are complete, show a summary containing every gift or coupon the recipient obtained.
+
+Finish the experience with a personal birthday message and the largest celebration animation of the entire website.
+
+The emotional progression should be:
+curiosity → warmth → fun → challenge → anticipation → surprise → excitement → emotional ending
+
+Prioritize interaction quality, animation timing, sound design and surprise over complicated business logic.
+
+The application does not require a backend. Questions, messages and 20 gifts should be configurable from TypeScript data files, while game progress can be persisted using localStorage.
+```
+
+---
+
+## Recommended Document Name
+
+**HBD My Love — Product, UX & Software Requirements Specification**
+
+เอกสารนี้ควรใช้เป็น Master Reference สำหรับ AI Agent ตลอดการพัฒนา และควรแก้ Content เช่นคำถาม ของขวัญ ข้อความอวยพร และ Asset List ในเอกสาร/Data File โดยไม่เปลี่ยน Core User Journey ที่กำหนดไว้
