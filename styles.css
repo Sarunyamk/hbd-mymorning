@@ -223,7 +223,10 @@ button { -webkit-tap-highlight-color:transparent; }
 #scene-message { justify-content:flex-start; overflow-y:auto; }
 #scene-message .card { flex:none; margin:auto 0; }
 .quiz-avatar-wrap { width:116px; height:116px; margin:-8px auto 12px; position:relative; }
-.quiz-avatar { width:100%; height:100%; object-fit:cover; border-radius:50%; border:4px solid rgba(255,255,255,.82); box-shadow:0 14px 35px rgba(92,186,255,.28); }
+.quiz-avatar-frame { position:relative; width:100%; height:100%; overflow:hidden; border-radius:50%; border:4px solid rgba(255,255,255,.82); box-shadow:0 14px 35px rgba(92,186,255,.28); background:#39294a; }
+.quiz-avatar { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform-origin:center; }
+.quiz-avatar-hat { position:absolute;z-index:2;left:50%;top:2%;width:34%;height:38%;transform:translateX(-50%) rotate(-3deg);clip-path:polygon(50% 0,5% 100%,95% 100%);background:linear-gradient(135deg,#ff73ad,#a890ff 55%,#67d9e8);filter:drop-shadow(0 1px 1px rgba(255,255,255,.9)); }
+.quiz-avatar-hat::before { content:"";position:absolute;left:43%;top:24%;width:12%;height:12%;border-radius:50%;background:#ffe374;box-shadow:-7px 12px 0 #fff,8px 17px 0 #ff8ab8; }
 .avatar-spark { position:absolute; font-size:22px; color:#ffe783; filter:drop-shadow(0 0 8px currentColor); animation:pulse 1.6s ease-in-out infinite; }
 .avatar-spark-1 { right:-12px; top:12px; }.avatar-spark-2 { left:-9px; bottom:5px; color:#ff9fc6; animation-delay:.4s; }
 
@@ -234,7 +237,8 @@ button { -webkit-tap-highlight-color:transparent; }
 .memory-collage { display:grid; grid-template-columns:1fr 1fr; gap:16px 12px; padding:8px 8px 20px; }
 .memory-card { margin:0; padding:8px 8px 12px; border-radius:7px; background:#fff9f1; box-shadow:0 13px 28px rgba(0,0,0,.3); color:#513a4d; transform:rotate(-1deg); }
 .memory-card img { width:100%; aspect-ratio:4/5; object-fit:cover; display:block; border-radius:3px; }
-.memory-card figcaption { padding-top:9px; font-family:"Segoe Print","Comic Sans MS",cursive; font-size:11px; font-weight:700; }
+.memory-card img.memory-image-error,.memory-film img.memory-image-error { opacity:.2; background:linear-gradient(135deg,#c8b4d8,#fff0f6); }
+.memory-card figcaption { padding-top:9px; font-family:"Segoe Print","Comic Sans MS",cursive; font-size:11px; font-weight:700; overflow-wrap:anywhere; word-break:break-word; }
 .memory-featured { grid-column:1/-1; width:72%; justify-self:center; transform:rotate(1.5deg); }
 .memory-featured img { aspect-ratio:1/1; }
 .memory-wide { grid-column:1/-1; transform:rotate(.7deg); }.memory-wide img { aspect-ratio:16/9; object-position:center 38%; }

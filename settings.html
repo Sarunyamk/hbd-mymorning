@@ -45,7 +45,7 @@
           <button data-tab="avatar">Avatar</button>
           <button data-tab="quiz">Quiz</button>
           <button data-tab="gifts">Gifts</button>
-          <button data-tab="memories">Memories <small>ถัดไป</small></button>
+          <button data-tab="memories">Memories</button>
         </nav>
 
         <div class="validation-summary" id="validationSummary" hidden></div>
@@ -242,20 +242,22 @@
               <span>04</span>
               <div>
                 <h2>Avatar</h2>
-                <p>อัปโหลดรูป ลากจัดตำแหน่ง และใส่หมวกวันเกิด</p>
+                <p>ใส่ลิงก์รูป ลากจัดตำแหน่ง และใส่หมวกวันเกิด</p>
               </div>
             </div>
             <div class="avatar-editor-layout">
               <div>
-                <button class="avatar-upload" id="avatarUploadBtn" type="button">
-                  <span>📷</span><b>เลือกรูปใบหน้า</b>
-                  <small>JPG, PNG หรือ WebP • ไม่เกิน 8 MB</small>
-                </button>
-                <input id="avatarFile" type="file" accept="image/jpeg,image/png,image/webp" hidden />
-                <p class="avatar-help">ลากบนรูปเพื่อจัดใบหน้าให้อยู่กลางวงกลม</p>
+                <label class="field">
+                  <span>ลิงก์รูป Avatar</span>
+                  <textarea id="avatarUrlInput" rows="4" maxlength="2048" placeholder="https://... หรือ Google Drive Share Link"></textarea>
+                </label>
+                <p class="avatar-help">Google Drive ต้องเปิดสิทธิ์ “ทุกคนที่มีลิงก์ดูได้” จากนั้นลากรูปด้านขวาเพื่อจัดใบหน้า</p>
               </div>
               <div class="avatar-canvas-wrap" id="avatarCanvasWrap">
-                <canvas id="avatarCanvas" width="512" height="512" aria-label="ตัวอย่าง Avatar"></canvas>
+                <div class="avatar-stage" id="avatarStage">
+                  <img id="avatarEditorImage" alt="ตัวอย่าง Avatar">
+                  <span class="avatar-party-hat" id="avatarEditorHat" aria-hidden="true"></span>
+                </div>
                 <span class="avatar-drag-hint">ลากเพื่อขยับ</span>
               </div>
             </div>
@@ -333,11 +335,40 @@
             <div class="gift-editor-list" id="giftEditorList"></div>
             <button class="gift-add-button" id="appendGiftBtn" type="button">＋ เพิ่มลูกบอลและของรางวัล</button>
           </section>
-          <section class="settings-section coming-soon" data-panel="memories">
-            <div>
-              📸
-              <h2>Memory builder</h2>
-              <p>รอบถัดไปจะเพิ่มรูปสูงสุด 10 รูป, Caption และการเรียงลำดับ</p>
+          <section class="settings-section" data-panel="memories">
+            <div class="section-heading">
+              <span>07</span>
+              <div>
+                <h2>Memories</h2>
+                <p>เพิ่มรูปด้วย URL สูงสุด 10 รูป โดยไม่ใช้พื้นที่อัปโหลดใน Browser</p>
+              </div>
+            </div>
+            <div class="conditional-note" id="memoriesDisabledNote" hidden>
+              <b>Memories ถูกปิดอยู่</b>
+              <span>เปิด Memories Section ที่หน้า General ก่อน จึงจะแก้อัลบั้มได้</span>
+            </div>
+            <div id="memoryBuilderContent">
+              <div class="memory-copy-fields">
+                <div class="field-grid two-columns">
+                  <label class="field"><span>หัวข้อ Memories</span><input data-path="memories.title" maxlength="30"><small class="counter" data-counter="memories.title"></small><em data-error="memories.title"></em></label>
+                  <label class="field"><span>หัวข้อรอง</span><input data-path="memories.subtitle" maxlength="40"><small class="counter" data-counter="memories.subtitle"></small><em data-error="memories.subtitle"></em></label>
+                </div>
+                <label class="field"><span>ข้อความแนะนำ</span><textarea data-path="memories.intro" rows="3" maxlength="120"></textarea><small class="counter" data-counter="memories.intro"></small><em data-error="memories.intro"></em></label>
+                <label class="field"><span>ข้อความท้าย Memories</span><textarea data-path="memories.note" rows="2" maxlength="100"></textarea><small class="counter" data-counter="memories.note"></small><em data-error="memories.note"></em></label>
+              </div>
+              <div class="memory-builder-toolbar">
+                <div><b>รูปความทรงจำ</b><span>ลิงก์รูปตรงหรือ Google Drive Share Link • สูงสุด 10 รูป</span></div>
+                <div class="count-stepper">
+                  <button type="button" id="removeMemoryBtn" aria-label="ลดรูป">−</button>
+                  <input id="memoryCount" type="number" min="0" max="10" inputmode="numeric" aria-label="จำนวนรูป">
+                  <button type="button" id="addMemoryBtn" aria-label="เพิ่มรูป">+</button>
+                </div>
+              </div>
+              <div class="memory-url-note">Google Drive: ตั้งสิทธิ์เป็น “ทุกคนที่มีลิงก์ดูได้” แล้วนำ Share Link มาวาง ระบบจะแปลงลิงก์สำหรับแสดงรูปให้อัตโนมัติ</div>
+              <em class="collection-error" data-error="memories.items"></em>
+              <em class="collection-error" data-error="memories.filmItemIds"></em>
+              <div class="memory-editor-list" id="memoryEditorList"></div>
+              <button class="memory-add-button" id="appendMemoryBtn" type="button">＋ เพิ่มรูปความทรงจำ</button>
             </div>
           </section>
         </form>

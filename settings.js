@@ -5,8 +5,6 @@ const previewFrame=document.getElementById('previewFrame');
 let draftConfig=loadDraft();
 let saveTimer=null;
 let previewTimer=null;
-let avatarImage=null;
-let avatarLoadToken=0;
 let avatarCommitTimer=null;
 let avatarDrag=null;
 
@@ -45,7 +43,13 @@ function syncAvatarControls(){
   document.getElementById('avatarOffsetY').value=editor.offsetY;
   document.getElementById('avatarHatEnabled').checked=Boolean(editor.hatEnabled);
   document.getElementById('avatarZoomValue').textContent=`${Math.round(editor.zoom*100)}%`;
-  loadAvatarSource(editor.sourceUrl||draftConfig.birthday.avatarUrl);
+  const source=editor.sourceUrl||draftConfig.birthday.avatarUrl;
+  document.getElementById('avatarUrlInput').value=source;
+  const image=document.getElementById('avatarEditorImage');
+  image.classList.remove('image-error');image.src=source;
+  image.onload=()=>document.getElementById('avatarError').textContent='';
+  image.onerror=()=>{image.classList.add('image-error');document.getElementById('avatarError').textContent='เปิดรูปนี้ไม่ได้ กรุณาตรวจ URL และสิทธิ์การเข้าถึง';};
+  renderAvatarEditor(false);
 }
 
 function createQuestion(){
@@ -186,81 +190,91 @@ function setGiftCount(requested){
   gifts.splice(target);commitGiftChange({render:true,openIndex:target-1});
 }
 
-function loadImage(url){
-  return new Promise((resolve,reject)=>{
-    const image=new Image();
-    image.onload=()=>resolve(image);
-    image.onerror=()=>reject(new Error('IMAGE_LOAD_FAILED'));
-    image.src=url;
-  });
-}
-
-async function loadAvatarSource(url){
-  const token=++avatarLoadToken;
+function normalizeMemoryUrl(value=''){
+  const raw=String(value).trim();if(!raw)return '';
   try{
-    const image=await loadImage(url);
-    if(token!==avatarLoadToken)return;
-    avatarImage=image;
-    document.getElementById('avatarError').textContent='';
-    drawAvatarCanvas(false);
-  }catch(error){
-    if(token===avatarLoadToken)document.getElementById('avatarError').textContent='เปิดรูปนี้ไม่ได้ กรุณาเลือกรูปใหม่';
-  }
+    const url=new URL(raw);
+    if(url.hostname==='drive.google.com'||url.hostname.endsWith('.drive.google.com')){
+      const match=url.pathname.match(/\/(?:file\/d|d)\/([^/]+)/);const id=match?.[1]||url.searchParams.get('id');
+      if(id)return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`;
+    }
+  }catch(error){return raw;}
+  return raw;
 }
 
-function drawPartyHat(context,size){
-  const center=size*.5,top=size*.015,baseY=size*.36,halfWidth=size*.145;
-  context.save();
-  context.lineJoin='round';
-  const gradient=context.createLinearGradient(center-halfWidth,baseY,center+halfWidth,top);
-  gradient.addColorStop(0,'#ff73ad');gradient.addColorStop(.52,'#a890ff');gradient.addColorStop(1,'#67d9e8');
-  context.beginPath();context.moveTo(center,top+size*.03);context.lineTo(center-halfWidth,baseY);context.lineTo(center+halfWidth,baseY);context.closePath();
-  context.fillStyle=gradient;context.fill();context.lineWidth=size*.012;context.strokeStyle='rgba(255,255,255,.92)';context.stroke();
-  ['#ffe374','#fff','#ff8ab8'].forEach((color,index)=>{
-    context.beginPath();context.arc(center+([-0.045,.045,0][index]*size),size*([.18,.27,.1][index]),size*.014,0,Math.PI*2);context.fillStyle=color;context.fill();
+function createMemory(index){
+  const layouts=['featured','tilt-left','tilt-right','wide'];
+  return {id:`m-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,imageUrl:'',caption:'',layout:layouts[index%layouts.length],look:''};
+}
+
+function memoryImage(container,url){
+  container.innerHTML='';
+  if(!url){container.textContent='📷';return;}
+  const image=document.createElement('img');image.src=url;image.alt='Memory preview';image.referrerPolicy='no-referrer';
+  image.addEventListener('error',()=>{image.classList.add('image-error');container.dataset.error='true';container.title='เปิดรูปไม่ได้ กรุณาตรวจ URL และสิทธิ์การเข้าถึง';});
+  image.addEventListener('load',()=>{container.dataset.error='false';container.title='';});container.appendChild(image);
+}
+
+function renderMemoryBuilder(openIndex){
+  const list=document.getElementById('memoryEditorList');
+  const previouslyOpen=new Set([...list.querySelectorAll('.memory-editor-card[open]')].map(card=>card.dataset.memoryId));
+  list.innerHTML='';
+  const items=draftConfig.memories.items,filmIds=draftConfig.memories.filmItemIds;
+  document.getElementById('memoryCount').value=items.length;
+  document.getElementById('removeMemoryBtn').disabled=items.length===0;
+  document.getElementById('addMemoryBtn').disabled=items.length>=EXPERIENCE_LIMITS.memoryMax;
+  document.getElementById('appendMemoryBtn').disabled=items.length>=EXPERIENCE_LIMITS.memoryMax;
+  if(!items.length){const empty=document.createElement('div');empty.className='memory-empty';empty.textContent='ยังไม่มีรูปความทรงจำ กด “เพิ่มรูปความทรงจำ” เพื่อเริ่มสร้างอัลบั้ม';list.appendChild(empty);return;}
+  items.forEach((item,index)=>{
+    item.imageUrl=typeof item.imageUrl==='string'?item.imageUrl:'';item.caption=typeof item.caption==='string'?item.caption:'';
+    const card=document.createElement('details');card.className='memory-editor-card';card.dataset.memoryId=item.id;card.dataset.memoryIndex=index;
+    card.open=previouslyOpen.has(item.id)||index===openIndex||(!previouslyOpen.size&&openIndex===undefined&&index===0);
+    const summary=document.createElement('summary');
+    const thumb=document.createElement('span');thumb.className='memory-thumb';memoryImage(thumb,item.imageUrl);
+    const copy=document.createElement('span');copy.className='memory-summary-copy';
+    const title=document.createElement('b');title.textContent=item.caption.trim()||`Memory รูปที่ ${index+1}`;
+    const meta=document.createElement('span');meta.textContent=`รูปที่ ${index+1} • ${item.layout||'standard'}`;copy.append(title,meta);
+    if(filmIds.includes(item.id)){const film=document.createElement('span');film.className='memory-film-pill';film.textContent='FILM';summary.append(thumb,copy,film);}else summary.append(thumb,copy);
+    const chevron=document.createElement('span');chevron.className='question-chevron';chevron.textContent='⌄';summary.appendChild(chevron);card.appendChild(summary);
+    const body=document.createElement('div');body.className='memory-editor-body';
+    const preview=document.createElement('div');preview.className='memory-image-preview';memoryImage(preview,item.imageUrl);body.appendChild(preview);
+    const urlField=document.createElement('label');urlField.className='field';urlField.innerHTML=`<span>ลิงก์รูปภาพ</span><input data-memory-field="imageUrl" maxlength="${EXPERIENCE_LIMITS.memoryUrl}" placeholder="https://... หรือ Google Drive Share Link"><em data-error="memories.items.${index}.imageUrl"></em>`;urlField.querySelector('input').value=item.imageUrl;body.appendChild(urlField);
+    const captionField=document.createElement('label');captionField.className='field';captionField.innerHTML=`<span>ข้อความบนภาพ</span><input data-memory-field="caption" maxlength="${EXPERIENCE_LIMITS.memoryCaption}"><small class="counter"></small><em data-error="memories.items.${index}.caption"></em>`;captionField.querySelector('input').value=item.caption;captionField.querySelector('.counter').textContent=`${item.caption.length} / ${EXPERIENCE_LIMITS.memoryCaption}`;body.appendChild(captionField);
+    const choices=document.createElement('div');choices.className='field-grid two-columns';
+    const layoutField=document.createElement('label');layoutField.className='field';layoutField.innerHTML='<span>รูปแบบการวาง</span><select data-memory-field="layout"><option value="">Standard</option><option value="featured">Featured — รูปเด่น</option><option value="wide">Wide — แนวนอน</option><option value="tilt-left">เอียงซ้าย</option><option value="tilt-right">เอียงขวา</option></select><em data-error="memories.items.'+index+'.layout"></em>';layoutField.querySelector('select').value=item.layout||'';
+    const lookField=document.createElement('label');lookField.className='field';lookField.innerHTML='<span>โทนสีรูป</span><select data-memory-field="look"><option value="">Original</option><option value="warm">Warm</option><option value="cool">Cool</option><option value="night">Night</option><option value="mint">Mint</option><option value="pink">Pink</option></select><em data-error="memories.items.'+index+'.look"></em>';lookField.querySelector('select').value=item.look||'';choices.append(layoutField,lookField);body.appendChild(choices);
+    const filmToggle=document.createElement('div');filmToggle.className='toggle-card memory-film-toggle';filmToggle.innerHTML='<div><b>แสดงในแถบฟิล์ม</b><span>เลือกได้สูงสุด 4 รูป</span></div><label class="switch"><input type="checkbox" data-memory-film><i></i></label>';
+    const checkbox=filmToggle.querySelector('input');checkbox.checked=filmIds.includes(item.id);checkbox.disabled=!checkbox.checked&&filmIds.length>=EXPERIENCE_LIMITS.memoryFilmMax;body.appendChild(filmToggle);
+    const tools=document.createElement('div');tools.className='memory-card-tools';
+    [['move-up','↑ ขึ้น',index===0],['move-down','↓ ลง',index===items.length-1],['duplicate','ทำสำเนา',items.length>=EXPERIENCE_LIMITS.memoryMax],['remove-memory','ลบรูป',false]].forEach(([action,label,disabled])=>{const button=document.createElement('button');button.type='button';button.dataset.memoryAction=action;button.textContent=label;button.disabled=disabled;if(action==='remove-memory')button.className='remove-memory';tools.appendChild(button);});
+    body.appendChild(tools);card.appendChild(body);list.appendChild(card);
   });
-  context.beginPath();context.ellipse(center,baseY,size*.158,size*.032,0,0,Math.PI*2);context.fillStyle='#fff4fc';context.fill();
-  context.beginPath();context.arc(center,top+size*.018,size*.035,0,Math.PI*2);context.fillStyle='#ffe374';context.fill();context.stroke();
-  context.restore();
 }
 
-function drawAvatarCanvas(commit=true){
-  if(!avatarImage)return;
-  const canvas=document.getElementById('avatarCanvas'),context=canvas.getContext('2d');
-  const size=canvas.width,editor=avatarEditorConfig();
-  context.clearRect(0,0,size,size);
-  context.fillStyle='#39294a';context.fillRect(0,0,size,size);
-  const cover=Math.max(size/avatarImage.naturalWidth,size/avatarImage.naturalHeight)*Number(editor.zoom||1);
-  const width=avatarImage.naturalWidth*cover,height=avatarImage.naturalHeight*cover;
-  const x=(size-width)/2+(Number(editor.offsetX)||0)*size/100;
-  const y=(size-height)/2+(Number(editor.offsetY)||0)*size/100;
-  context.drawImage(avatarImage,x,y,width,height);
-  if(editor.hatEnabled)drawPartyHat(context,size);
+function commitMemoryChange({render=false,openIndex}={}){
+  const ids=new Set(draftConfig.memories.items.map(item=>item.id));
+  draftConfig.memories.filmItemIds=draftConfig.memories.filmItemIds.filter(id=>ids.has(id)).slice(0,EXPERIENCE_LIMITS.memoryFilmMax);
+  if(render)renderMemoryBuilder(openIndex);showValidation();scheduleSaveAndPreview();
+}
+
+function setMemoryCount(requested){
+  const items=draftConfig.memories.items,target=Math.max(0,Math.min(EXPERIENCE_LIMITS.memoryMax,Number(requested)||0));
+  if(target<items.length&&!confirm(`ลดเหลือ ${target} รูป? รูปท้ายอัลบั้มที่ถูกตัดออกจะหายไป`)){document.getElementById('memoryCount').value=items.length;return;}
+  while(items.length<target)items.push(createMemory(items.length));items.splice(target);commitMemoryChange({render:true,openIndex:target-1});
+}
+
+function renderAvatarEditor(commit=true){
+  const editor=avatarEditorConfig(),image=document.getElementById('avatarEditorImage');
+  image.style.transform=`translate(${Number(editor.offsetX)||0}%,${Number(editor.offsetY)||0}%) scale(${Number(editor.zoom)||1})`;
+  document.getElementById('avatarEditorHat').hidden=!editor.hatEnabled;
   if(!commit)return;
-  draftConfig.birthday.avatarUrl=canvas.toDataURL('image/webp',.86);
+  draftConfig.birthday.avatarUrl=editor.sourceUrl;
   draftConfig.birthday.avatarAlt=`${draftConfig.birthday.name||'เจ้าของวันเกิด'}${editor.hatEnabled?' สวมหมวกวันเกิด':''}`;
 }
 
 function scheduleAvatarCommit(){
   clearTimeout(avatarCommitTimer);
-  avatarCommitTimer=setTimeout(()=>{drawAvatarCanvas(true);showValidation();scheduleSaveAndPreview();},140);
-}
-
-async function prepareAvatarUpload(file){
-  const error=document.getElementById('avatarError');error.textContent='';
-  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){error.textContent='รองรับเฉพาะไฟล์ JPG, PNG และ WebP';return;}
-  if(file.size>EXPERIENCE_LIMITS.avatarUploadBytes){error.textContent='ไฟล์ต้องมีขนาดไม่เกิน 8 MB';return;}
-  try{
-    const objectUrl=URL.createObjectURL(file),source=await loadImage(objectUrl);URL.revokeObjectURL(objectUrl);
-    const maxSide=1024,scale=Math.min(1,maxSide/Math.max(source.naturalWidth,source.naturalHeight));
-    const canvas=document.createElement('canvas');canvas.width=Math.round(source.naturalWidth*scale);canvas.height=Math.round(source.naturalHeight*scale);
-    canvas.getContext('2d').drawImage(source,0,0,canvas.width,canvas.height);
-    const editor=avatarEditorConfig();
-    editor.sourceUrl=canvas.toDataURL('image/webp',.82);editor.zoom=1;editor.offsetX=0;editor.offsetY=8;editor.hatEnabled=true;
-    syncAvatarControls();
-    await loadAvatarSource(editor.sourceUrl);
-    drawAvatarCanvas(true);showValidation();scheduleSaveAndPreview();
-  }catch(uploadError){error.textContent='ประมวลผลรูปไม่สำเร็จ กรุณาลองไฟล์อื่น';console.error('Avatar upload error:',uploadError);}
+  avatarCommitTimer=setTimeout(()=>{renderAvatarEditor(true);showValidation();scheduleSaveAndPreview();},140);
 }
 
 function renderForm(){
@@ -273,6 +287,7 @@ function renderForm(){
   syncAvatarControls();
   renderQuizBuilder();
   renderGiftBuilder();
+  renderMemoryBuilder();
   showValidation();
 }
 
@@ -301,6 +316,10 @@ function updateDerivedUi(){
   document.getElementById('quizDisabledNote').hidden=quizEnabled;
   document.getElementById('quizBuilderContent').classList.toggle('quiz-builder-off',!quizEnabled);
   document.querySelector('[data-tab="quiz"]').classList.toggle('feature-off',!quizEnabled);
+  const memoriesEnabled=Boolean(draftConfig.features.memoriesEnabled);
+  document.getElementById('memoriesDisabledNote').hidden=memoriesEnabled;
+  document.getElementById('memoryBuilderContent').classList.toggle('memory-builder-off',!memoriesEnabled);
+  document.querySelector('[data-tab="memories"]').classList.toggle('feature-off',!memoriesEnabled);
 }
 
 function showValidation(){
@@ -422,11 +441,51 @@ document.getElementById('giftEditorList').addEventListener('click',event=>{
   commitGiftChange({render:true,openIndex:nextOpen});
 });
 
-document.getElementById('avatarUploadBtn').addEventListener('click',()=>document.getElementById('avatarFile').click());
-document.getElementById('avatarFile').addEventListener('change',event=>{
-  const file=event.target.files?.[0];
-  if(file)prepareAvatarUpload(file);
-  event.target.value='';
+document.getElementById('memoryCount').addEventListener('change',event=>setMemoryCount(event.target.value));
+document.getElementById('addMemoryBtn').addEventListener('click',()=>setMemoryCount(draftConfig.memories.items.length+1));
+document.getElementById('removeMemoryBtn').addEventListener('click',()=>setMemoryCount(draftConfig.memories.items.length-1));
+document.getElementById('appendMemoryBtn').addEventListener('click',()=>setMemoryCount(draftConfig.memories.items.length+1));
+document.getElementById('memoryEditorList').addEventListener('input',event=>{
+  const input=event.target.closest('[data-memory-field]'),card=input?.closest('.memory-editor-card');if(!input||!card)return;
+  const index=Number(card.dataset.memoryIndex),item=draftConfig.memories.items[index],field=input.dataset.memoryField;item[field]=input.value;
+  if(field==='caption'){
+    input.parentElement.querySelector('.counter').textContent=`${input.value.length} / ${EXPERIENCE_LIMITS.memoryCaption}`;
+    card.querySelector('.memory-summary-copy b').textContent=input.value.trim()||`Memory รูปที่ ${index+1}`;
+  }
+  showValidation();scheduleSaveAndPreview();
+});
+document.getElementById('memoryEditorList').addEventListener('change',event=>{
+  const card=event.target.closest('.memory-editor-card');if(!card)return;
+  const index=Number(card.dataset.memoryIndex),item=draftConfig.memories.items[index];
+  if(event.target.matches('[data-memory-film]')){
+    const ids=draftConfig.memories.filmItemIds;
+    if(event.target.checked&&!ids.includes(item.id)&&ids.length<EXPERIENCE_LIMITS.memoryFilmMax)ids.push(item.id);
+    else if(!event.target.checked)draftConfig.memories.filmItemIds=ids.filter(id=>id!==item.id);
+    commitMemoryChange({render:true,openIndex:index});return;
+  }
+  if(!event.target.matches('[data-memory-field]'))return;
+  const field=event.target.dataset.memoryField;
+  if(field==='imageUrl')item.imageUrl=normalizeMemoryUrl(event.target.value);
+  else item[field]=event.target.value;
+  commitMemoryChange({render:true,openIndex:index});
+});
+document.getElementById('memoryEditorList').addEventListener('click',event=>{
+  const button=event.target.closest('[data-memory-action]');if(!button)return;
+  const card=button.closest('.memory-editor-card'),index=Number(card.dataset.memoryIndex),items=draftConfig.memories.items,action=button.dataset.memoryAction;
+  if(action==='move-up'&&index>0)[items[index-1],items[index]]=[items[index],items[index-1]];
+  else if(action==='move-down'&&index<items.length-1)[items[index+1],items[index]]=[items[index],items[index+1]];
+  else if(action==='duplicate'&&items.length<EXPERIENCE_LIMITS.memoryMax){const copy=clone(items[index]);copy.id=`m-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;items.splice(index+1,0,copy);}
+  else if(action==='remove-memory'){if(!confirm(`ลบ Memory รูปที่ ${index+1}?`))return;items.splice(index,1);}
+  else return;
+  const nextOpen=action==='move-up'?index-1:action==='move-down'?index+1:action==='duplicate'?index+1:Math.min(index,items.length-1);
+  commitMemoryChange({render:true,openIndex:nextOpen});
+});
+
+document.getElementById('avatarUrlInput').addEventListener('change',event=>{
+  const editor=avatarEditorConfig(),source=normalizeMemoryUrl(event.target.value),changed=source!==editor.sourceUrl;
+  editor.sourceUrl=source;event.target.value=source;
+  if(changed){editor.zoom=1;editor.offsetX=0;editor.offsetY=8;editor.hatEnabled=true;}
+  syncAvatarControls();renderAvatarEditor(true);showValidation();scheduleSaveAndPreview();
 });
 ['avatarZoom','avatarOffsetX','avatarOffsetY'].forEach(id=>{
   document.getElementById(id).addEventListener('input',event=>{
@@ -434,15 +493,15 @@ document.getElementById('avatarFile').addEventListener('change',event=>{
     const property={avatarZoom:'zoom',avatarOffsetX:'offsetX',avatarOffsetY:'offsetY'}[id];
     editor[property]=Number(event.target.value);
     document.getElementById('avatarZoomValue').textContent=`${Math.round(editor.zoom*100)}%`;
-    drawAvatarCanvas(false);scheduleAvatarCommit();
+    renderAvatarEditor(false);scheduleAvatarCommit();
   });
 });
 document.getElementById('avatarHatEnabled').addEventListener('change',event=>{
-  avatarEditorConfig().hatEnabled=event.target.checked;drawAvatarCanvas(false);scheduleAvatarCommit();
+  avatarEditorConfig().hatEnabled=event.target.checked;renderAvatarEditor(false);scheduleAvatarCommit();
 });
 document.getElementById('avatarCenterBtn').addEventListener('click',()=>{
   const editor=avatarEditorConfig();editor.zoom=1;editor.offsetX=0;editor.offsetY=editor.hatEnabled?8:0;
-  syncAvatarControls();drawAvatarCanvas(false);scheduleAvatarCommit();
+  syncAvatarControls();renderAvatarEditor(false);scheduleAvatarCommit();
 });
 document.getElementById('avatarResetBtn').addEventListener('click',async()=>{
   draftConfig.birthday.avatarEditor=clone(defaults.birthday.avatarEditor);
@@ -463,7 +522,7 @@ avatarCanvasWrap.addEventListener('pointermove',event=>{
   editor.offsetY=Math.max(-50,Math.min(50,avatarDrag.offsetY+(event.clientY-avatarDrag.y)/rect.height*100));
   document.getElementById('avatarOffsetX').value=editor.offsetX;
   document.getElementById('avatarOffsetY').value=editor.offsetY;
-  drawAvatarCanvas(false);scheduleAvatarCommit();
+  renderAvatarEditor(false);scheduleAvatarCommit();
 });
 function endAvatarDrag(event){
   if(!avatarDrag||event.pointerId!==avatarDrag.pointerId)return;

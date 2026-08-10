@@ -77,7 +77,8 @@ function renderMemoriesFromConfig() {
     const figure=document.createElement('figure');
     const layoutClasses={featured:'memory-featured',wide:'memory-wide','tilt-left':'memory-tilt-left','tilt-right':'memory-tilt-right'};
     figure.className=`memory-card ${layoutClasses[item.layout]||''}`.trim();
-    const img=document.createElement('img');img.src=item.imageUrl;img.alt=`ความทรงจำของ ${experienceConfig.birthday.name}`;
+    const img=document.createElement('img');img.src=item.imageUrl;img.alt=`ความทรงจำของ ${experienceConfig.birthday.name}`;img.loading='lazy';img.referrerPolicy='no-referrer';
+    img.addEventListener('error',()=>{img.classList.add('memory-image-error');img.alt='เปิดรูปความทรงจำไม่ได้';});
     if(item.look) img.className=`memory-look memory-look-${item.look}`;
     const caption=document.createElement('figcaption');caption.textContent=item.caption;
     figure.append(img,caption);collage.appendChild(figure);
@@ -88,7 +89,7 @@ function renderMemoriesFromConfig() {
     const memory=experienceConfig.memories.items.find(item=>item.id===itemId);
     if(!memory) return;
     const frame=document.createElement('div'),img=document.createElement('img');
-    img.src=memory.imageUrl;img.alt=`${experienceConfig.birthday.name} memory ${index+1}`;frame.appendChild(img);film.appendChild(frame);
+    img.src=memory.imageUrl;img.alt=`${experienceConfig.birthday.name} memory ${index+1}`;img.loading='lazy';img.referrerPolicy='no-referrer';img.addEventListener('error',()=>img.classList.add('memory-image-error'));frame.appendChild(img);film.appendChild(frame);
   });
 }
 
@@ -105,7 +106,10 @@ function renderExperienceContent() {
   cakeTopText.textContent=formatConfigText(cake.topText);
   cakeTopText.style.fontSize=cakeTopText.textContent.length>24?'14px':cakeTopText.textContent.length>18?'16px':'20px';
   document.getElementById('cakeBottomText').textContent=formatConfigText(cake.bottomText);
-  const avatar=document.getElementById('birthdayAvatar');avatar.src=birthday.avatarUrl;avatar.alt=birthday.avatarAlt;
+  const avatar=document.getElementById('birthdayAvatar'),avatarEditor=birthday.avatarEditor||{};
+  avatar.src=birthday.avatarUrl;avatar.alt=birthday.avatarAlt;
+  avatar.style.transform=`translate(${Number(avatarEditor.offsetX)||0}%,${Number(avatarEditor.offsetY)||0}%) scale(${Number(avatarEditor.zoom)||1})`;
+  document.getElementById('birthdayAvatarHat').hidden=!avatarEditor.hatEnabled;
   document.getElementById('birthdayCardTitle').textContent=formatConfigText(birthday.card.title);
   document.getElementById('birthdayCardMessage').textContent=formatConfigText(birthday.card.message);
   document.getElementById('preQuizTitle').textContent=formatConfigText(features.quizEnabled?birthday.card.preQuizTitle:birthday.card.directGiftTitle);

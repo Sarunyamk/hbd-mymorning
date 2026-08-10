@@ -22,7 +22,13 @@ const EXPERIENCE_LIMITS = Object.freeze({
   giftDescription: 100,
   memoryMax: 10,
   memoryCaption: 50,
-  avatarUploadBytes: 8 * 1024 * 1024,
+  memoryTitle: 30,
+  memorySubtitle: 40,
+  memoryIntro: 120,
+  memoryNote: 100,
+  memoryUrl: 2048,
+  memoryFilmMax: 4,
+  avatarUrl: 2048,
 });
 
 function validateExperienceConfig(config) {
@@ -67,6 +73,8 @@ function validateExperienceConfig(config) {
     addError('birthday.age', 'INVALID_AGE', 'อายุต้องเป็นตัวเลขระหว่าง 1–120');
   if (!text(config.birthday?.avatarUrl))
     addError('birthday.avatarUrl', 'REQUIRED', 'กรุณาเลือกรูป Avatar');
+  else if (text(config.birthday.avatarUrl).length > EXPERIENCE_LIMITS.avatarUrl || !/^(https?:\/\/|assets\/|\.\.?\/|data:image\/)/i.test(text(config.birthday.avatarUrl)))
+    addError('birthday.avatarUrl', 'INVALID_URL', 'ลิงก์ Avatar ไม่ถูกต้อง กรุณาใช้ URL รูปแบบ https://');
   if (
     text(config.birthday?.card?.message).length >
     EXPERIENCE_LIMITS.greetingMessage
@@ -297,18 +305,37 @@ function validateExperienceConfig(config) {
       'EMPTY_MEMORIES',
       'ยังไม่มีรูปในหน้า Memories'
     );
-  if (memories.length > EXPERIENCE_LIMITS.memoryMax)
+  if (memoriesEnabled && memories.length > EXPERIENCE_LIMITS.memoryMax)
     addError(
       'memories.items',
       'COUNT_OUT_OF_RANGE',
       `รูป Memories ต้องไม่เกิน ${EXPERIENCE_LIMITS.memoryMax} รูป`
     );
-  memories.forEach((item, index) => {
+  if (memoriesEnabled) {
+    const memoryCopyFields=[
+      ['title','memoryTitle','หัวข้อ Memories'],
+      ['subtitle','memorySubtitle','หัวข้อรอง Memories'],
+      ['intro','memoryIntro','ข้อความแนะนำ Memories'],
+      ['note','memoryNote','ข้อความท้าย Memories']
+    ];
+    memoryCopyFields.forEach(([field,limitKey,label])=>{
+      const value=text(config.memories?.[field]);
+      if(!value)addError(`memories.${field}`,'REQUIRED',`กรุณากรอก${label}`);
+      else if(value.length>EXPERIENCE_LIMITS[limitKey])addError(`memories.${field}`,'TEXT_TOO_LONG',`${label}ต้องไม่เกิน ${EXPERIENCE_LIMITS[limitKey]} ตัวอักษร`);
+    });
+  }
+  if (memoriesEnabled) memories.forEach((item, index) => {
     if (!text(item?.imageUrl))
       addError(
         `memories.items.${index}.imageUrl`,
         'REQUIRED',
         `Memory รูปที่ ${index + 1} ยังไม่มีไฟล์ภาพ`
+      );
+    else if (text(item.imageUrl).length > EXPERIENCE_LIMITS.memoryUrl || !/^(https?:\/\/|assets\/|\.\.?\/|data:image\/)/i.test(text(item.imageUrl)))
+      addError(
+        `memories.items.${index}.imageUrl`,
+        'INVALID_URL',
+        `ลิงก์รูปที่ ${index + 1} ไม่ถูกต้อง กรุณาใช้ URL รูปแบบ https://`
       );
     if (text(item?.caption).length > EXPERIENCE_LIMITS.memoryCaption)
       addError(
@@ -316,7 +343,16 @@ function validateExperienceConfig(config) {
         'TEXT_TOO_LONG',
         `Caption ต้องไม่เกิน ${EXPERIENCE_LIMITS.memoryCaption} ตัวอักษร`
       );
+    if (!['','featured','wide','tilt-left','tilt-right'].includes(item?.layout||''))
+      addError(`memories.items.${index}.layout`,'INVALID_LAYOUT','รูปแบบการวางรูปไม่ถูกต้อง');
+    if (!['','warm','cool','night','mint','pink'].includes(item?.look||''))
+      addError(`memories.items.${index}.look`,'INVALID_LOOK','Filter ของรูปไม่ถูกต้อง');
   });
+  if(memoriesEnabled){
+    const filmIds=Array.isArray(config.memories?.filmItemIds)?config.memories.filmItemIds:[];
+    if(filmIds.length>EXPERIENCE_LIMITS.memoryFilmMax)addError('memories.filmItemIds','COUNT_OUT_OF_RANGE',`รูปในแถบฟิล์มต้องไม่เกิน ${EXPERIENCE_LIMITS.memoryFilmMax} รูป`);
+    filmIds.forEach(id=>{if(!memories.some(item=>item.id===id))addError('memories.filmItemIds','UNKNOWN_ITEM','พบรูปในแถบฟิล์มที่ไม่มีอยู่ในรายการ Memories');});
+  }
 
   return { valid: errors.length === 0, errors, warnings };
 }
