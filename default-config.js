@@ -88,10 +88,7 @@ const DEFAULT_EXPERIENCE_CONFIG = {
       {id:'m5',imageUrl:'assets/chaw-birthday-avatar.png',caption:'ทริปที่ยังคิดถึง',layout:'tilt-left',look:'mint'},
       {id:'m6',imageUrl:'assets/chaw-birthday-avatar.png',caption:'ยิ้มแบบนี้ไปนาน ๆ นะ',layout:'tilt-right',look:'pink'}
     ],
-    filmImages: [
-      'assets/chaw-birthday-avatar.png','assets/chaw-birthday-avatar.png',
-      'assets/chaw-birthday-avatar.png','assets/chaw-birthday-avatar.png'
-    ]
+    filmItemIds: ['m2','m3','m5','m6']
   }
 };
 

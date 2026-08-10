@@ -39,16 +39,23 @@ function normalizeExperienceConfig(customConfig={}) {
   else config.giftBox.gifts=validGifts;
   const minimumBallCount=Math.min(10,config.giftBox.gifts.length);
   config.giftBox.ballCount=Math.min(25,config.giftBox.gifts.length,Math.max(minimumBallCount,Number(config.giftBox.ballCount)||config.giftBox.gifts.length));
-  config.cake.candleCount=Math.min(8,Math.max(1,Number(config.cake.candleCount)||4));
+  config.cake.candleCount=Math.min(5,Math.max(1,Number(config.cake.candleCount)||4));
   config.memories.items=config.memories.items.slice(0,10);
-  config.memories.filmImages=config.memories.filmImages.slice(0,10);
+  config.memories.filmItemIds=config.memories.filmItemIds.slice(0,10);
   return config;
 }
 
-const experienceConfig=normalizeExperienceConfig(window.EXPERIENCE_CONFIG||{});
-const questions=experienceConfig.quiz.questions;
-const gifts=experienceConfig.giftBox.gifts;
-const colors=experienceConfig.giftBox.colors;
+let experienceConfig=normalizeExperienceConfig(window.EXPERIENCE_CONFIG||{});
+let questions=experienceConfig.quiz.questions;
+let gifts=experienceConfig.giftBox.gifts;
+let colors=experienceConfig.giftBox.colors;
+
+function setRuntimeConfig(nextConfig) {
+  experienceConfig=normalizeExperienceConfig(nextConfig);
+  questions=experienceConfig.quiz.questions;
+  gifts=experienceConfig.giftBox.gifts;
+  colors=experienceConfig.giftBox.colors;
+}
 
 function formatConfigText(text='') {
   return String(text)
@@ -77,9 +84,11 @@ function renderMemoriesFromConfig() {
   });
 
   const film=document.getElementById('memoryFilm');film.innerHTML='';
-  experienceConfig.memories.filmImages.forEach((src,index)=>{
+  experienceConfig.memories.filmItemIds.forEach((itemId,index)=>{
+    const memory=experienceConfig.memories.items.find(item=>item.id===itemId);
+    if(!memory) return;
     const frame=document.createElement('div'),img=document.createElement('img');
-    img.src=src;img.alt=`${experienceConfig.birthday.name} memory ${index+1}`;frame.appendChild(img);film.appendChild(frame);
+    img.src=memory.imageUrl;img.alt=`${experienceConfig.birthday.name} memory ${index+1}`;frame.appendChild(img);film.appendChild(frame);
   });
 }
 
@@ -106,6 +115,24 @@ function renderExperienceContent() {
 }
 
 renderExperienceContent();
+
+function applyExperienceConfig(nextConfig,{restart=true}={}) {
+  const validation=window.validateExperienceConfig(nextConfig);
+  if(!validation.valid) return validation;
+  setRuntimeConfig(nextConfig);
+  renderExperienceContent();
+  renderCandles();
+  renderSummary();
+  if(restart) restartExperience();
+  return validation;
+}
+
+window.applyExperienceConfig=applyExperienceConfig;
+window.addEventListener('message',event=>{
+  if(event.source!==window.parent || event.data?.type!=='HBD_PREVIEW_CONFIG') return;
+  const validation=applyExperienceConfig(event.data.config);
+  window.parent.postMessage({type:'HBD_PREVIEW_RESULT',validation},'*');
+});
 
 function sparkleInit() {
   const root=document.getElementById('sparkles');
