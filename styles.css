@@ -339,6 +339,7 @@ button { -webkit-tap-highlight-color:transparent; }
 @keyframes fragmentBurst { 0%{opacity:1;transform:translate(0,0) rotate(0) scale(1)} 100%{opacity:0;transform:translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(.72)} }
 .reveal-card { display:none; width:320px; max-width:86vw; animation:popIn .55s cubic-bezier(.18,.85,.25,1); }
 .reveal-card.show { display:block; }
+.reveal-card #giftName,.reveal-card #giftDesc { max-width:100%; overflow-wrap:anywhere; word-break:break-word; }
 .gift-icon { font-size:72px; margin:4px 0; }
 .rarity { display:inline-block;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;letter-spacing:.12em; }
 .rarity.normal { background:rgba(255,255,255,.09); }
@@ -347,12 +348,12 @@ button { -webkit-tap-highlight-color:transparent; }
 
 .gift-grid { display:grid;grid-template-columns:1fr 1fr;gap:11px;width:100%;padding-bottom:25px; }
 .gift-mini {
-  min-height:138px;padding:14px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.075);text-align:left;
+  min-width:0;min-height:138px;padding:14px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.075);text-align:left;
   animation:rise .45s ease both;
 }
 .gift-mini .emoji { font-size:34px; }
-.gift-mini h4 { margin:8px 0 3px;font-size:14px; }
-.gift-mini p { margin:0;color:#cfc2d9;font-size:11px;line-height:1.4; }
+.gift-mini h4 { margin:8px 0 3px;font-size:14px;overflow-wrap:anywhere;word-break:break-word; }
+.gift-mini p { margin:0;color:#cfc2d9;font-size:11px;line-height:1.4;overflow-wrap:anywhere;word-break:break-word; }
 
 .confetti { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:100; }
 .confetti i { position:absolute;top:-30px;width:9px;height:15px;border-radius:3px;animation:fall 2.3s ease-in forwards; }

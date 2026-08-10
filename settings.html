@@ -44,7 +44,7 @@
           <button data-tab="card">Card after Cake</button>
           <button data-tab="avatar">Avatar</button>
           <button data-tab="quiz">Quiz</button>
-          <button data-tab="gifts">Gifts <small>ถัดไป</small></button>
+          <button data-tab="gifts">Gifts</button>
           <button data-tab="memories">Memories <small>ถัดไป</small></button>
         </nav>
 
@@ -309,12 +309,29 @@
               <button class="quiz-add-question" id="appendQuestionBtn" type="button">＋ เพิ่มคำถามใหม่</button>
             </div>
           </section>
-          <section class="settings-section coming-soon" data-panel="gifts">
-            <div>
-              🎁
-              <h2>Gift builder</h2>
-              <p>รอบถัดไปจะเพิ่มลูกบอล 10–25 ลูกและของรางวัลรายลูก</p>
+          <section class="settings-section" data-panel="gifts">
+            <div class="section-heading">
+              <span>06</span>
+              <div>
+                <h2>Gift Balls</h2>
+                <p>กำหนดลูกบอล 10–25 ลูก และของรางวัลภายในแต่ละลูก</p>
+              </div>
             </div>
+            <div class="gift-builder-toolbar">
+              <div>
+                <b>จำนวนลูกบอลของขวัญ</b>
+                <span>หนึ่งลูกบอลต่อหนึ่งของรางวัล</span>
+              </div>
+              <div class="count-stepper">
+                <button type="button" id="removeGiftBtn" aria-label="ลดลูกบอล">−</button>
+                <input id="giftCount" type="number" min="10" max="25" inputmode="numeric" aria-label="จำนวนลูกบอล" />
+                <button type="button" id="addGiftBtn" aria-label="เพิ่มลูกบอล">+</button>
+              </div>
+            </div>
+            <em class="collection-error" data-error="giftBox.ballCount"></em>
+            <em class="collection-error" data-error="giftBox.gifts"></em>
+            <div class="gift-editor-list" id="giftEditorList"></div>
+            <button class="gift-add-button" id="appendGiftBtn" type="button">＋ เพิ่มลูกบอลและของรางวัล</button>
           </section>
           <section class="settings-section coming-soon" data-panel="memories">
             <div>

@@ -116,6 +116,76 @@ function setQuestionCount(requested){
   commitQuizChange({render:true,openIndex:target-1});
 }
 
+function giftColor(gift,index){
+  const fallback=draftConfig.giftBox.colors[index%draftConfig.giftBox.colors.length]||'#ff8fb8';
+  return /^#[0-9a-f]{6}$/i.test(gift?.color||'')?gift.color:fallback;
+}
+
+function createGift(index){
+  return {id:`g-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name:'',icon:'🎁',description:'',rarity:'normal',color:giftColor(null,index)};
+}
+
+function renderGiftBuilder(openIndex){
+  const list=document.getElementById('giftEditorList');
+  const previouslyOpen=new Set([...list.querySelectorAll('.gift-editor-card[open]')].map(card=>card.dataset.giftId));
+  list.innerHTML='';
+  const gifts=draftConfig.giftBox.gifts;
+  document.getElementById('giftCount').value=draftConfig.giftBox.ballCount;
+  document.getElementById('removeGiftBtn').disabled=gifts.length<=EXPERIENCE_LIMITS.ballMin;
+  document.getElementById('addGiftBtn').disabled=gifts.length>=EXPERIENCE_LIMITS.ballMax;
+  document.getElementById('appendGiftBtn').disabled=gifts.length>=EXPERIENCE_LIMITS.ballMax;
+  gifts.forEach((gift,index)=>{
+    gift.icon=typeof gift.icon==='string'?gift.icon:'';
+    gift.name=typeof gift.name==='string'?gift.name:'';
+    gift.description=typeof gift.description==='string'?gift.description:'';
+    const card=document.createElement('details');card.className='gift-editor-card';card.dataset.giftId=gift.id;card.dataset.giftIndex=index;
+    card.open=previouslyOpen.has(gift.id)||index===openIndex||(!previouslyOpen.size&&openIndex===undefined&&index===0);
+    const summary=document.createElement('summary');
+    const ball=document.createElement('span');ball.className='gift-ball-preview';ball.style.background=giftColor(gift,index);ball.textContent=gift.icon||'🎁';
+    const copy=document.createElement('span');copy.className='gift-summary-copy';
+    const title=document.createElement('b');title.textContent=gift.name.trim()||`ของรางวัลลูกที่ ${index+1}`;
+    const meta=document.createElement('span');meta.textContent=`ลูกที่ ${index+1} • ${gift.description.trim()||'ยังไม่มีรายละเอียด'}`;
+    const rarity=document.createElement('span');rarity.className=`gift-rarity-pill ${gift.rarity}`;rarity.textContent=gift.rarity;
+    const chevron=document.createElement('span');chevron.className='question-chevron';chevron.textContent='⌄';
+    copy.append(title,meta);summary.append(ball,copy,rarity,chevron);card.appendChild(summary);
+    const body=document.createElement('div');body.className='gift-editor-body';
+    const firstRow=document.createElement('div');firstRow.className='field-grid two-columns';
+    const iconField=document.createElement('label');iconField.className='field';iconField.innerHTML=`<span>ไอคอนของรางวัล</span><input data-gift-field="icon" maxlength="${EXPERIENCE_LIMITS.giftIcon}"><small class="counter"></small><em data-error="giftBox.gifts.${index}.icon"></em>`;
+    iconField.querySelector('input').value=gift.icon;iconField.querySelector('.counter').textContent=`${gift.icon.length} / ${EXPERIENCE_LIMITS.giftIcon}`;
+    const nameField=document.createElement('label');nameField.className='field';nameField.innerHTML=`<span>ชื่อของรางวัล</span><input data-gift-field="name" maxlength="${EXPERIENCE_LIMITS.giftName}"><small class="counter"></small><em data-error="giftBox.gifts.${index}.name"></em>`;
+    nameField.querySelector('input').value=gift.name;nameField.querySelector('.counter').textContent=`${gift.name.length} / ${EXPERIENCE_LIMITS.giftName}`;
+    firstRow.append(iconField,nameField);body.appendChild(firstRow);
+    const secondRow=document.createElement('div');secondRow.className='field-grid two-columns';
+    const colorField=document.createElement('label');colorField.className='field';colorField.innerHTML=`<span>สีลูกบอล</span><input type="color" data-gift-field="color" value="${giftColor(gift,index)}"><em data-error="giftBox.gifts.${index}.color"></em>`;
+    const rarityField=document.createElement('label');rarityField.className='field';rarityField.innerHTML=`<span>ระดับของรางวัล</span><select data-gift-field="rarity"><option value="normal">Normal — ทั่วไป</option><option value="rare">Rare — หายาก</option><option value="special">Special — พิเศษ</option></select><em data-error="giftBox.gifts.${index}.rarity"></em>`;
+    rarityField.querySelector('select').value=gift.rarity;
+    secondRow.append(colorField,rarityField);body.appendChild(secondRow);
+    const descriptionField=document.createElement('label');descriptionField.className='field';descriptionField.innerHTML=`<span>รายละเอียดของรางวัล</span><textarea rows="3" data-gift-field="description" maxlength="${EXPERIENCE_LIMITS.giftDescription}"></textarea><small class="counter"></small><em data-error="giftBox.gifts.${index}.description"></em>`;
+    descriptionField.querySelector('textarea').value=gift.description;descriptionField.querySelector('.counter').textContent=`${gift.description.length} / ${EXPERIENCE_LIMITS.giftDescription}`;body.appendChild(descriptionField);
+    const tools=document.createElement('div');tools.className='gift-card-tools';
+    [['move-up','↑ ขึ้น',index===0],['move-down','↓ ลง',index===gifts.length-1],['duplicate','ทำสำเนา',gifts.length>=EXPERIENCE_LIMITS.ballMax],['remove-gift','ลบลูก',gifts.length<=EXPERIENCE_LIMITS.ballMin]].forEach(([action,label,disabled])=>{
+      const button=document.createElement('button');button.type='button';button.dataset.giftAction=action;button.textContent=label;button.disabled=disabled;if(action==='remove-gift')button.className='remove-gift';tools.appendChild(button);
+    });
+    body.appendChild(tools);card.appendChild(body);list.appendChild(card);
+  });
+}
+
+function commitGiftChange({render=false,openIndex}={}){
+  draftConfig.giftBox.ballCount=draftConfig.giftBox.gifts.length;
+  if(draftConfig.giftBox.pickLimitWithoutQuiz>draftConfig.giftBox.ballCount)draftConfig.giftBox.pickLimitWithoutQuiz=draftConfig.giftBox.ballCount;
+  updateDerivedUi();
+  if(render)renderGiftBuilder(openIndex);
+  showValidation();scheduleSaveAndPreview();
+}
+
+function setGiftCount(requested){
+  const gifts=draftConfig.giftBox.gifts;
+  const target=Math.max(EXPERIENCE_LIMITS.ballMin,Math.min(EXPERIENCE_LIMITS.ballMax,Number(requested)||gifts.length));
+  if(target<gifts.length&&!confirm(`ลดเหลือ ${target} ลูก? ของรางวัลท้ายชุดที่ถูกตัดออกจะหายไป`)){document.getElementById('giftCount').value=gifts.length;return;}
+  while(gifts.length<target)gifts.push(createGift(gifts.length));
+  gifts.splice(target);commitGiftChange({render:true,openIndex:target-1});
+}
+
 function loadImage(url){
   return new Promise((resolve,reject)=>{
     const image=new Image();
@@ -202,6 +272,7 @@ function renderForm(){
   updateDerivedUi();
   syncAvatarControls();
   renderQuizBuilder();
+  renderGiftBuilder();
   showValidation();
 }
 
@@ -315,6 +386,40 @@ document.getElementById('questionList').addEventListener('click',event=>{
   }else return;
   const nextOpen=action==='move-up'?index-1:action==='move-down'?index+1:action==='duplicate'?index+1:Math.min(index,questions.length-1);
   commitQuizChange({render:true,openIndex:nextOpen});
+});
+
+document.getElementById('giftCount').addEventListener('change',event=>setGiftCount(event.target.value));
+document.getElementById('addGiftBtn').addEventListener('click',()=>setGiftCount(draftConfig.giftBox.gifts.length+1));
+document.getElementById('removeGiftBtn').addEventListener('click',()=>setGiftCount(draftConfig.giftBox.gifts.length-1));
+document.getElementById('appendGiftBtn').addEventListener('click',()=>setGiftCount(draftConfig.giftBox.gifts.length+1));
+function updateGiftCardSummary(card,gift,index){
+  const ball=card.querySelector('.gift-ball-preview');ball.textContent=gift.icon||'🎁';ball.style.background=giftColor(gift,index);
+  card.querySelector('.gift-summary-copy b').textContent=gift.name.trim()||`ของรางวัลลูกที่ ${index+1}`;
+  card.querySelector('.gift-summary-copy span').textContent=`ลูกที่ ${index+1} • ${gift.description.trim()||'ยังไม่มีรายละเอียด'}`;
+  const rarity=card.querySelector('.gift-rarity-pill');rarity.className=`gift-rarity-pill ${gift.rarity}`;rarity.textContent=gift.rarity;
+}
+document.getElementById('giftEditorList').addEventListener('input',event=>{
+  const input=event.target.closest('[data-gift-field]'),card=input?.closest('.gift-editor-card');if(!input||!card)return;
+  const index=Number(card.dataset.giftIndex),gift=draftConfig.giftBox.gifts[index],field=input.dataset.giftField;
+  gift[field]=input.value;
+  const counter=input.parentElement.querySelector('.counter');if(counter){const limit={icon:EXPERIENCE_LIMITS.giftIcon,name:EXPERIENCE_LIMITS.giftName,description:EXPERIENCE_LIMITS.giftDescription}[field];counter.textContent=`${input.value.length} / ${limit}`;}
+  updateGiftCardSummary(card,gift,index);showValidation();scheduleSaveAndPreview();
+});
+document.getElementById('giftEditorList').addEventListener('change',event=>{
+  if(!event.target.matches('select[data-gift-field]'))return;
+  const card=event.target.closest('.gift-editor-card'),index=Number(card.dataset.giftIndex),gift=draftConfig.giftBox.gifts[index];
+  gift[event.target.dataset.giftField]=event.target.value;updateGiftCardSummary(card,gift,index);showValidation();scheduleSaveAndPreview();
+});
+document.getElementById('giftEditorList').addEventListener('click',event=>{
+  const button=event.target.closest('[data-gift-action]');if(!button)return;
+  const card=button.closest('.gift-editor-card'),index=Number(card.dataset.giftIndex),gifts=draftConfig.giftBox.gifts,action=button.dataset.giftAction;
+  if(action==='move-up'&&index>0)[gifts[index-1],gifts[index]]=[gifts[index],gifts[index-1]];
+  else if(action==='move-down'&&index<gifts.length-1)[gifts[index+1],gifts[index]]=[gifts[index],gifts[index+1]];
+  else if(action==='duplicate'&&gifts.length<EXPERIENCE_LIMITS.ballMax){const copy=clone(gifts[index]);copy.id=`g-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;gifts.splice(index+1,0,copy);}
+  else if(action==='remove-gift'&&gifts.length>EXPERIENCE_LIMITS.ballMin){if(!confirm(`ลบลูกบอลและของรางวัลลูกที่ ${index+1}?`))return;gifts.splice(index,1);}
+  else return;
+  const nextOpen=action==='move-up'?index-1:action==='move-down'?index+1:action==='duplicate'?index+1:Math.min(index,gifts.length-1);
+  commitGiftChange({render:true,openIndex:nextOpen});
 });
 
 document.getElementById('avatarUploadBtn').addEventListener('click',()=>document.getElementById('avatarFile').click());

@@ -399,7 +399,7 @@ function renderBalls() {
     const b=document.createElement('button'); b.className='ball';
     b.dataset.gift=JSON.stringify(g);b.dataset.idx=i;
     const [x,y]=slots[i];
-    b.style.left=x+'%';b.style.top=y+'%';b.style.background=colors[i%colors.length];
+    b.style.left=x+'%';b.style.top=y+'%';b.style.background=g.color||colors[i%colors.length];
     b.style.setProperty('--dur',(1.6+Math.random()*1.6)+'s');
     b.style.transform=`translate(-50%,-50%) scale(${.85+Math.random()*.22})`;
     b.onclick=()=>selectBall(b);root.appendChild(b);

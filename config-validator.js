@@ -18,6 +18,7 @@ const EXPERIENCE_LIMITS = Object.freeze({
   ballMin: 10,
   ballMax: 25,
   giftName: 40,
+  giftIcon: 8,
   giftDescription: 100,
   memoryMax: 10,
   memoryCaption: 50,
@@ -226,6 +227,18 @@ function validateExperienceConfig(config) {
     );
   gifts.forEach((gift, index) => {
     const base = `giftBox.gifts.${index}`;
+    if (!text(gift?.icon))
+      addError(
+        `${base}.icon`,
+        'REQUIRED',
+        `ของรางวัลลูกที่ ${index + 1} ยังไม่มีไอคอน`
+      );
+    else if (text(gift.icon).length > EXPERIENCE_LIMITS.giftIcon)
+      addError(
+        `${base}.icon`,
+        'TEXT_TOO_LONG',
+        `ไอคอนต้องไม่เกิน ${EXPERIENCE_LIMITS.giftIcon} ตัวอักษร`
+      );
     if (!text(gift?.name))
       addError(
         `${base}.name`,
@@ -255,6 +268,12 @@ function validateExperienceConfig(config) {
         `${base}.rarity`,
         'INVALID_RARITY',
         'Rarity ต้องเป็น normal, rare หรือ special'
+      );
+    if (gift?.color && !/^#[0-9a-f]{6}$/i.test(gift.color))
+      addError(
+        `${base}.color`,
+        'INVALID_COLOR',
+        'สีลูกบอลต้องเป็นรหัสสี Hex ที่ถูกต้อง'
       );
   });
   const pickLimit = Number(config.giftBox?.pickLimitWithoutQuiz);
