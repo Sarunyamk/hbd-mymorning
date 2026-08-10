@@ -5,8 +5,6 @@ const state = {
   holdTimer:null, holdValue:0, boxOpened:false, blowCompleted:false, crackCount:0, finalOpened:false
 };
 
-const name_birthday = 'chaw';
-
 const MIC_CONFIG = {
   threshold: 0.04,
   requiredFrames: 10,
@@ -14,46 +12,100 @@ const MIC_CONFIG = {
   smoothing: 0.6
 };
 
-const questions = [
-  {q:'ถ้าให้เลือกวันพักผ่อนหนึ่งวัน คุณคิดว่าเราจะเลือกแบบไหน?', a:['คาเฟ่ชิล ๆ ☕','เดินห้างทั้งวัน 🛍️','นอนดูหนังด้วยกัน 🎬','ตื่นตีห้าไปวิ่ง 🏃'], c:2},
-  {q:'ของกินแบบไหนเหมาะกับ Birthday Date ที่สุด?', a:['ซูชิ 🍣','มาม่าถ้วยเดียว','ข้าวเปล่า','แตงกวา'], c:0},
-  {q:'ถ้ามีทริปสั้น ๆ หนึ่งวัน อยากให้เป็นแนวไหน?', a:['ทะเล 🌊','ภูเขา ⛰️','คาเฟ่ฮอป ☕','ได้หมดถ้าไปด้วยกัน 💖'], c:3},
-  {q:'ของขวัญแบบไหนน่ารักที่สุด?', a:['ของที่ตั้งใจเลือกให้','ของแพงที่สุดเสมอ','คูปองสุ่ม','อะไรก็ได้ที่ห่อสวย'], c:0},
-  {q:'ถ้ามีเพลงเปิดตอนขับรถด้วยกัน ควรเป็นแบบไหน?', a:['เพลงชิล ๆ','เพลงร้องตามได้','เพลงโปรดของเรา','ถูกทุกข้อ'], c:3},
-  {q:'กิจกรรมเย็นวันศุกร์ที่น่าเลือกที่สุด?', a:['Dinner date 🍽️','ทำ OT จนเช้า','ประชุมต่อ','จัดโต๊ะทำงาน'], c:0},
-  {q:'ถ้าได้ Coupon ฟรี 1 ใบ คุณอยากให้เป็นอะไร?', a:['Cafe Date','Movie Night','Dinner','Surprise ทั้งหมด'], c:3},
-  {q:'คำไหนเหมาะกับเว็บนี้ที่สุด?', a:['รายงานประจำปี','ระบบ ERP','Birthday Surprise ✨','Form เบิกของ'], c:2},
-  {q:'ถ้าเจอลูกบอล Special ในกล่อง คุณคิดว่าจะเกิดอะไร?', a:['ไม่มีอะไร','จอดำแล้ว Surprise ใหญ่','เว็บปิด','กลับไปข้อ 1'], c:1},
-  {q:'คำถามสุดท้าย: พร้อมเปิดของขวัญหรือยัง?', a:['ยัง','พร้อมมาก 🎁','ขอสอบใหม่','ขอเปิด Excel ก่อน'], c:1}
-];
+function cloneValue(value) {
+  return typeof structuredClone==='function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
+}
 
-const gifts = [
-  {name:'Sushi Dinner', icon:'🍣', desc:'คูปองไปกินซูชิด้วยกัน 1 มื้อ', rarity:'normal'},
-  {name:'Cafe Date', icon:'☕', desc:'คาเฟ่ที่อยากไป เลือกได้ 1 ร้าน', rarity:'normal'},
-  {name:'Movie Night', icon:'🎬', desc:'เลือกหนังหนึ่งเรื่อง + ของกินเต็มโต๊ะ', rarity:'normal'},
-  {name:'Ice Cream', icon:'🍦', desc:'ไอศกรีม 1 รอบ แบบไม่ต้องนับสกู๊ป 😆', rarity:'normal'},
-  {name:'Ramen Date', icon:'🍜', desc:'ราเมนร้อน ๆ 1 มื้อ', rarity:'normal'},
-  {name:'Cake Coupon', icon:'🍰', desc:'เลือกร้านเค้กที่อยากกินได้เลย', rarity:'normal'},
-  {name:'Photo Day', icon:'📸', desc:'หนึ่งวันถ่ายรูปเล่นกันแบบเต็มที่', rarity:'normal'},
-  {name:'Book / Manga', icon:'📚', desc:'เลือกหนังสือหรือมังงะ 1 เล่ม', rarity:'normal'},
-  {name:'Shopping Coupon', icon:'🛍️', desc:'คูปองช้อปของที่อยากได้หนึ่งอย่าง', rarity:'rare'},
-  {name:'Steak Dinner', icon:'🥩', desc:'Dinner สเต๊กดี ๆ 1 มื้อ', rarity:'normal'},
-  {name:'Plushie', icon:'🧸', desc:'ตุ๊กตาน่ารัก ๆ 1 ตัว', rarity:'normal'},
-  {name:'Game Night', icon:'🎮', desc:'เลือกเกม/กิจกรรมเล่นด้วยกันหนึ่งคืน', rarity:'normal'},
-  {name:'Headphone Fund', icon:'🎧', desc:'ช่วยสมทบของที่อยากได้เกี่ยวกับเสียงเพลง', rarity:'rare'},
-  {name:'Day Trip', icon:'🚗', desc:'ทริปสั้น ๆ 1 วัน ไปที่ไหนก็เลือกได้', rarity:'rare'},
-  {name:'Event Ticket', icon:'🎟️', desc:'คูปองสำหรับงานหรือกิจกรรมที่อยากไป', rarity:'rare'},
-  {name:'Handmade Gift', icon:'🎨', desc:'ของทำมือที่มีชิ้นเดียว', rarity:'rare'},
-  {name:'Love Letter', icon:'💌', desc:'จดหมายพิเศษหนึ่งฉบับ เอาไว้อ่านคนเดียว', rarity:'special'},
-  {name:'Mystery Date', icon:'🌙', desc:'เดตลับที่ไม่บอกแผนล่วงหน้า', rarity:'rare'},
-  {name:'Big Surprise', icon:'🎁', desc:'ของขวัญลับที่ต้องเปิดของจริงอีกที', rarity:'special'},
-  {name:'Grand Prize', icon:'👑', desc:'สิทธิ์เลือก 1 อย่างที่อยากได้มากที่สุด', rarity:'special'}
-];
+function mergeWithDefaults(defaultValue, customValue) {
+  if(Array.isArray(defaultValue)) return Array.isArray(customValue) ? cloneValue(customValue) : cloneValue(defaultValue);
+  if(defaultValue && typeof defaultValue==='object') {
+    const custom=customValue && typeof customValue==='object' ? customValue : {};
+    return Object.fromEntries(Object.keys(defaultValue).map(key=>[key,mergeWithDefaults(defaultValue[key],custom[key])]));
+  }
+  return customValue===undefined || customValue===null ? defaultValue : customValue;
+}
 
-const colors = ['#ff8fb8','#9e88ff','#63c7e8','#ffd15c','#70d6a6','#ff9f69','#e87bff','#73a4ff','#ff668f','#a5e56c'];
+function normalizeExperienceConfig(customConfig={}) {
+  const config=mergeWithDefaults(window.DEFAULT_EXPERIENCE_CONFIG,customConfig);
+  const validQuestions=config.quiz.questions.filter(item=>
+    item && typeof item.text==='string' && Array.isArray(item.answers) && item.answers.length>=2 &&
+    Number.isInteger(item.correctAnswerIndex) && item.correctAnswerIndex>=0 && item.correctAnswerIndex<item.answers.length
+  );
+  if(!validQuestions.length) config.quiz.questions=cloneValue(window.DEFAULT_EXPERIENCE_CONFIG.quiz.questions);
+  else config.quiz.questions=validQuestions;
 
-document.getElementById('birthdayName').textContent=name_birthday;
-document.getElementById('cakeBirthdayName').textContent=name_birthday;
+  const validGifts=config.giftBox.gifts.filter(item=>item && item.name && item.description);
+  if(!validGifts.length) config.giftBox.gifts=cloneValue(window.DEFAULT_EXPERIENCE_CONFIG.giftBox.gifts);
+  else config.giftBox.gifts=validGifts;
+  const minimumBallCount=Math.min(10,config.giftBox.gifts.length);
+  config.giftBox.ballCount=Math.min(25,config.giftBox.gifts.length,Math.max(minimumBallCount,Number(config.giftBox.ballCount)||config.giftBox.gifts.length));
+  config.cake.candleCount=Math.min(8,Math.max(1,Number(config.cake.candleCount)||4));
+  config.memories.items=config.memories.items.slice(0,10);
+  config.memories.filmImages=config.memories.filmImages.slice(0,10);
+  return config;
+}
+
+const experienceConfig=normalizeExperienceConfig(window.EXPERIENCE_CONFIG||{});
+const questions=experienceConfig.quiz.questions;
+const gifts=experienceConfig.giftBox.gifts;
+const colors=experienceConfig.giftBox.colors;
+
+function formatConfigText(text='') {
+  return String(text)
+    .replaceAll('{name}',experienceConfig.birthday.name)
+    .replaceAll('{age}',experienceConfig.birthday.age)
+    .replaceAll('{questionCount}',questions.length);
+}
+
+function renderMemoriesFromConfig() {
+  const title=document.getElementById('memoryTitle');
+  title.textContent=experienceConfig.memories.title;
+  title.appendChild(document.createElement('br'));
+  const subtitle=document.createElement('span');subtitle.textContent=formatConfigText(experienceConfig.memories.subtitle);title.appendChild(subtitle);
+  document.getElementById('memoryIntro').textContent=formatConfigText(experienceConfig.memories.intro);
+  document.getElementById('memoryNote').textContent=formatConfigText(experienceConfig.memories.note);
+
+  const collage=document.getElementById('memoryCollage');collage.innerHTML='';
+  experienceConfig.memories.items.forEach(item=>{
+    const figure=document.createElement('figure');
+    const layoutClasses={featured:'memory-featured',wide:'memory-wide','tilt-left':'memory-tilt-left','tilt-right':'memory-tilt-right'};
+    figure.className=`memory-card ${layoutClasses[item.layout]||''}`.trim();
+    const img=document.createElement('img');img.src=item.imageUrl;img.alt=`ความทรงจำของ ${experienceConfig.birthday.name}`;
+    if(item.look) img.className=`memory-look memory-look-${item.look}`;
+    const caption=document.createElement('figcaption');caption.textContent=item.caption;
+    figure.append(img,caption);collage.appendChild(figure);
+  });
+
+  const film=document.getElementById('memoryFilm');film.innerHTML='';
+  experienceConfig.memories.filmImages.forEach((src,index)=>{
+    const frame=document.createElement('div'),img=document.createElement('img');
+    img.src=src;img.alt=`${experienceConfig.birthday.name} memory ${index+1}`;frame.appendChild(img);film.appendChild(frame);
+  });
+}
+
+function renderExperienceContent() {
+  const {birthday,cake,final,features}=experienceConfig;
+  document.getElementById('birthdayName').textContent=birthday.name;
+  document.getElementById('introLead').textContent=formatConfigText(birthday.introLead);
+  document.getElementById('cakeTitle').textContent=formatConfigText(cake.title);
+  document.getElementById('cakeInstruction').textContent=formatConfigText(cake.instruction);
+  document.getElementById('cakeTopText').textContent=formatConfigText(cake.topText);
+  document.getElementById('cakeBottomText').textContent=formatConfigText(cake.bottomText);
+  const avatar=document.getElementById('birthdayAvatar');avatar.src=birthday.avatarUrl;avatar.alt=birthday.avatarAlt;
+  document.getElementById('birthdayCardTitle').textContent=formatConfigText(birthday.card.title);
+  document.getElementById('birthdayCardMessage').textContent=formatConfigText(birthday.card.message);
+  document.getElementById('preQuizTitle').textContent=formatConfigText(features.quizEnabled?birthday.card.preQuizTitle:birthday.card.directGiftTitle);
+  document.getElementById('preQuizMessage').textContent=formatConfigText(features.quizEnabled?birthday.card.preQuizMessage:birthday.card.directGiftMessage);
+  document.getElementById('continueJourneyBtn').textContent=features.quizEnabled?birthday.card.quizButtonLabel:birthday.card.giftButtonLabel;
+  document.getElementById('resultTotal').textContent=questions.length;
+  document.getElementById('finalTitle').textContent=formatConfigText(final.title);
+  document.getElementById('finalMessage').textContent=formatConfigText(final.message);
+  const memoriesButton=document.getElementById('memoriesBtn');
+  memoriesButton.style.display=features.memoriesEnabled?'inline-block':'none';
+  renderMemoriesFromConfig();
+}
+
+renderExperienceContent();
 
 function sparkleInit() {
   const root=document.getElementById('sparkles');
@@ -74,7 +126,6 @@ function showScene(name) {
   document.querySelectorAll('.scene').forEach(x=>x.classList.remove('active'));
   const el=document.getElementById('scene-'+name);
   if(el) el.classList.add('active');
-  document.getElementById('collectionFab').style.display = state.gifts.length && !['intro','cake','message','quiz','result','memories'].includes(name) ? 'grid':'none';
   if(name==='final') celebrate(70);
 }
 
@@ -117,7 +168,7 @@ function toggleMusic() {
 
 function renderCandles() {
   const root=document.getElementById('candles'); root.innerHTML='';
-  for(let i=0;i<4;i++){
+  for(let i=0;i<experienceConfig.cake.candleCount;i++){
     const c=document.createElement('div'); c.className='candle'; c.dataset.out='0';
     c.innerHTML='<div class="flame"></div>';
     root.appendChild(c);
@@ -237,17 +288,22 @@ function stopMic() {
 }
 
 function startQuiz() {
+  if(!experienceConfig.features.quizEnabled) { enterGift(experienceConfig.giftBox.pickLimitWithoutQuiz); return; }
   state.score=0;state.qIndex=0;state.answered=false;renderQuestion();showScene('quiz');
+}
+function continueFromBirthdayCard() {
+  if(experienceConfig.features.quizEnabled) startQuiz();
+  else enterGift(experienceConfig.giftBox.pickLimitWithoutQuiz);
 }
 function renderQuestion() {
   const item=questions[state.qIndex];
-  document.getElementById('qIndex').textContent=`Question ${state.qIndex+1} / 10`;
+  document.getElementById('qIndex').textContent=`Question ${state.qIndex+1} / ${questions.length}`;
   document.getElementById('scoreTop').textContent=state.score;
-  document.getElementById('qProgress').style.width=((state.qIndex)/10*100)+'%';
-  document.getElementById('question').textContent=item.q;
+  document.getElementById('qProgress').style.width=((state.qIndex)/questions.length*100)+'%';
+  document.getElementById('question').textContent=item.text;
   document.getElementById('feedback').textContent='';
   const root=document.getElementById('answers');root.innerHTML='';
-  item.a.forEach((txt,i)=>{
+  item.answers.forEach((txt,i)=>{
     const b=document.createElement('button');b.className='answer';b.textContent=txt;
     b.onclick=()=>answerQuestion(i,b);root.appendChild(b);
   });
@@ -256,14 +312,14 @@ function answerQuestion(i,btn) {
   if(state.answered) return; state.answered=true;
   const item=questions[state.qIndex];
   const buttons=[...document.querySelectorAll('.answer')];
-  buttons[item.c].classList.add('correct');
-  if(i===item.c) {
+  buttons[item.correctAnswerIndex].classList.add('correct');
+  if(i===item.correctAnswerIndex) {
     state.score++; document.getElementById('scoreTop').textContent=state.score;
-    document.getElementById('feedback').textContent='ถูกต้อง! +1 สิทธิ์เลือกของขวัญ 🎁';
+    document.getElementById('feedback').textContent=experienceConfig.quiz.correctFeedback;
     const fly=document.createElement('div');fly.className='ticket-fly';fly.textContent='🎁 +1';document.getElementById('phone').appendChild(fly);setTimeout(()=>fly.remove(),1000);
     tone(880,.12,.05); setTimeout(()=>tone(1175,.18,.045),110);
   } else {
-    btn.classList.add('wrong');document.getElementById('feedback').textContent='Oops 😝 เกือบแล้ว!';
+    btn.classList.add('wrong');document.getElementById('feedback').textContent=experienceConfig.quiz.incorrectFeedback;
     tone(180,.16,.03);
   }
   setTimeout(()=>{
@@ -278,11 +334,11 @@ function answerQuestion(i,btn) {
   },1050);
 }
 
-function enterGift() {
-  state.picks=state.score || 1; state.used=0; state.gifts=[]; state.boxOpened=false;
+function enterGift(requestedPicks) {
+  const configuredPicks=requestedPicks ?? (experienceConfig.features.quizEnabled?state.score:experienceConfig.giftBox.pickLimitWithoutQuiz);
+  state.picks=Math.min(gifts.length,Math.max(1,Number(configuredPicks)||1)); state.used=0; state.gifts=[]; state.boxOpened=false;
   document.getElementById('pickLimit').textContent=state.picks;
   document.getElementById('pickUsed').textContent=0;
-  document.getElementById('fabCount').textContent=0;
   const box=document.getElementById('giftbox');box.classList.remove('open');box.classList.add('closed');
   document.getElementById('boxBtn').style.display='inline-block';
   document.getElementById('giftHint').textContent='แตะกล่องเพื่อเปิดดูว่าข้างในมีอะไร 👀';
@@ -291,12 +347,13 @@ function enterGift() {
 }
 function renderBalls() {
   const root=document.getElementById('ballLayer'); root.innerHTML='';
-  const shuffled=[...gifts].sort(()=>Math.random()-.5);
+  const shuffled=[...gifts].slice(0,experienceConfig.giftBox.ballCount).sort(()=>Math.random()-.5);
   const slots=[
     [6,12],[25,7],[48,13],[70,7],[79,26],
     [12,34],[35,30],[58,35],[5,58],[26,55],
     [50,57],[72,52],[15,74],[38,75],[62,73],
-    [80,69],[41,14],[66,18],[18,17],[55,81]
+    [80,69],[41,14],[66,18],[18,17],[55,81],
+    [88,42],[88,58],[8,46],[31,87],[72,86]
   ].sort(()=>Math.random()-.5);
   shuffled.forEach((g,i)=>{
     const b=document.createElement('button'); b.className='ball';
@@ -313,7 +370,7 @@ function openBox() {
   state.boxOpened=true;
   const box=document.getElementById('giftbox');box.classList.remove('closed');box.classList.add('open');
   document.getElementById('boxBtn').style.display='none';
-  document.getElementById('giftHint').textContent=`มีลูกบอล 20 ลูก แต่เลือกได้ ${state.picks} ลูก... เลือกดี ๆ นะ 👀`;
+  document.getElementById('giftHint').textContent=`มีลูกบอล ${experienceConfig.giftBox.ballCount} ลูก แต่เลือกได้ ${state.picks} ลูก... เลือกดี ๆ นะ 👀`;
   tone(250,.12,.04);setTimeout(()=>tone(480,.2,.04),160);
 }
 function selectBall(ball) {
@@ -354,7 +411,7 @@ function crackSelectedBall() {
 function revealGift(g) {
   document.getElementById('giftIcon').textContent=g.icon;
   document.getElementById('giftName').textContent=g.name;
-  document.getElementById('giftDesc').textContent=g.desc;
+  document.getElementById('giftDesc').textContent=g.description;
   const r=document.getElementById('rarityLabel');r.textContent=g.rarity.toUpperCase();r.className='rarity '+g.rarity;
   document.getElementById('revealCard').classList.add('show');
   celebrate(g.rarity==='special'?75:g.rarity==='rare'?38:18);
@@ -366,7 +423,6 @@ function keepGift() {
   const {el,gift}=state.selectedBall;
   el.classList.add('used'); state.gifts.push(gift); state.used++;
   document.getElementById('pickUsed').textContent=state.used;
-  document.getElementById('fabCount').textContent=state.gifts.length;
   document.getElementById('revealOverlay').classList.remove('show');
   state.selectedBall=null;
   if(state.used>=state.picks) {
@@ -380,11 +436,12 @@ function keepGift() {
 
 function openFinalSurprise(button) {
   if(state.finalOpened) {
-    showScene('memories');
+    if(experienceConfig.features.memoriesEnabled) showScene('memories');
+    else restartExperience();
     return;
   }
   state.finalOpened=true;
-  button.textContent='My Memories 📸';
+  button.textContent=experienceConfig.features.memoriesEnabled?'My Memories 📸':'เล่นใหม่';
   showScene('final');
 }
 function renderSummary() {
@@ -392,7 +449,11 @@ function renderSummary() {
   const list=state.gifts.length?state.gifts:gifts.slice(0,8);
   list.forEach((g,i)=>{
     const d=document.createElement('div');d.className='gift-mini';d.style.animationDelay=(i*.06)+'s';
-    d.innerHTML=`<div class="emoji">${g.icon}</div><h4>${g.name}</h4><p>${g.desc}</p><span class="rarity ${g.rarity}" style="margin-top:9px">${g.rarity.toUpperCase()}</span>`;
+    const icon=document.createElement('div');icon.className='emoji';icon.textContent=g.icon;
+    const name=document.createElement('h4');name.textContent=g.name;
+    const description=document.createElement('p');description.textContent=g.description;
+    const rarity=document.createElement('span');rarity.className=`rarity ${g.rarity}`;rarity.style.marginTop='9px';rarity.textContent=g.rarity.toUpperCase();
+    d.append(icon,name,description,rarity);
     root.appendChild(d);
   });
 }
@@ -413,7 +474,6 @@ function restartExperience() {
   stopMic(); clearInterval(state.melodyTimer);
   state.score=0;state.qIndex=0;state.picks=0;state.used=0;state.gifts=[];state.boxOpened=false;state.blowCompleted=false;state.crackCount=0;state.finalOpened=false;
   renderCandles();document.getElementById('blowMeter').style.width='0%';document.getElementById('blowStatus').textContent='';
-  document.getElementById('collectionFab').style.display='none';
   const finalButton=document.getElementById('finalSurpriseBtn');
   finalButton.disabled=false;
   finalButton.hidden=false;

@@ -77,9 +77,7 @@
                 Happy<br />Birthday ✨
                 <span class="birthday-name" id="birthdayName"></span>
               </h1>
-              <p class="lead">
-                วันนี้ไม่อยากให้เป็นแค่วันธรรมดา เลยทำอะไรเล็ก ๆ ให้ลองเล่นดู 🎁
-              </p>
+              <p class="lead" id="introLead"></p>
               <div class="buttons">
                 <button class="primary" onclick="begin()">
                   Tap to begin 💖
@@ -89,22 +87,18 @@
 
             <section class="scene" id="scene-cake">
               <div class="eyebrow">Make a wish</div>
-              <h2 style="font-size: 30px; margin: 7px 0 2px">
-                เป่าเทียนกัน 🎂
-              </h2>
-              <p class="lead" style="font-size: 14px; margin: 4px 0 8px">
-                เปิดไมค์แล้วเป่าเบา ๆ หรือกดค้างที่ปุ่มด้านล่างก็ได้
-              </p>
+              <h2 id="cakeTitle" style="font-size: 30px; margin: 7px 0 2px"></h2>
+              <p class="lead" id="cakeInstruction" style="font-size: 14px; margin: 4px 0 8px"></p>
 
               <div class="cake-zone">
                 <div class="candles" id="candles"></div>
                 <div class="cake-top">
                   <div class="cake-message">
-                    <strong>HDB <span id="cakeBirthdayName"></span></strong>
+                    <strong id="cakeTopText"></strong>
                   </div>
                 </div>
                 <div class="cake-bottom">
-                  <div class="cake-age">32 y.</div>
+                  <div class="cake-age" id="cakeBottomText"></div>
                 </div>
               </div>
 
@@ -130,15 +124,12 @@
             <section class="scene" id="scene-message">
               <div class="card">
                 <div class="quiz-avatar-wrap">
-                  <img class="quiz-avatar" src="assets/chaw-birthday-avatar.png" alt="Chaw สวมหมวกวันเกิด" />
+                  <img class="quiz-avatar" id="birthdayAvatar" alt="" />
                   <span class="avatar-spark avatar-spark-1">✦</span>
                   <span class="avatar-spark avatar-spark-2">♥</span>
                 </div>
-                <h2>สุขสันต์วันเกิดนะ 💖</h2>
-                <p>
-                  ขอให้ปีนี้มีแต่เรื่องดี ๆ ได้ทำสิ่งที่อยากทำ มีรอยยิ้มเยอะ ๆ
-                  และเจอ Surprise ที่น่ารักกว่าที่คิด ✨
-                </p>
+                <h2 id="birthdayCardTitle"></h2>
+                <p id="birthdayCardMessage"></p>
                 <hr
                   style="
                     border: 0;
@@ -146,23 +137,16 @@
                     margin: 18px 0;
                   "
                 />
-                <p style="font-weight: 800; color: white">
-                  แต่ก่อนเปิดของขวัญ... 👀
-                </p>
-                <p>
-                  ลองตอบคำถาม 10 ข้อก่อนนะ ตอบถูก 1 ข้อ =
-                  ได้สิทธิ์เลือกลูกบอลของขวัญ 1 ลูก 🎁
-                </p>
-                <button class="primary" onclick="startQuiz()">
-                  เริ่มตอบคำถาม 😏
-                </button>
+                <p id="preQuizTitle" style="font-weight: 800; color: white"></p>
+                <p id="preQuizMessage"></p>
+                <button class="primary" id="continueJourneyBtn" onclick="continueFromBirthdayCard()"></button>
               </div>
             </section>
 
             <section class="scene" id="scene-quiz">
               <div class="quiz-wrap">
                 <div class="quiz-head">
-                  <span id="qIndex">Question 1 / 10</span
+                  <span id="qIndex"></span
                   ><b>🎁 <span id="scoreTop">0</span></b>
                 </div>
                 <div class="progress"><span id="qProgress"></span></div>
@@ -177,7 +161,7 @@
             <section class="scene" id="scene-result">
               <div class="eyebrow">Quiz complete</div>
               <h2 style="font-size: 28px; margin: 8px 0">เก่งแค่ไหนนะ? 😏</h2>
-              <div class="result-score"><span id="resultScore">0</span>/10</div>
+              <div class="result-score"><span id="resultScore">0</span>/<span id="resultTotal"></span></div>
               <p class="lead">นั่นหมายความว่าคุณได้สิทธิ์เลือกของขวัญ</p>
               <div
                 style="font-size: 26px; font-weight: 900; margin: 8px 0 16px"
@@ -239,18 +223,13 @@
             <section class="scene" id="scene-final">
               <div class="eyebrow">One last thing</div>
               <div style="font-size: 58px; margin-bottom: 12px">💖</div>
-              <h1 class="display gradient-text" style="font-size: 44px">
-                Happy Birthday
-              </h1>
-              <p class="lead">
-                ขอให้วันนี้ทำให้ยิ้มได้ และหวังว่าของขวัญทุกชิ้นจะเตือนว่า
-                คุณเป็นคนพิเศษมากแค่ไหน ✨
-              </p>
+              <h1 class="display gradient-text" id="finalTitle" style="font-size: 44px"></h1>
+              <p class="lead" id="finalMessage"></p>
               <div class="buttons">
                 <button class="primary" onclick="showScene('summary')">
                   ดูของขวัญอีกครั้ง 🎁
                 </button>
-                <button class="secondary" onclick="showScene('memories')">
+                <button class="secondary" id="memoriesBtn" onclick="showScene('memories')">
                   My Memories 📸
                 </button>
               </div>
@@ -259,38 +238,17 @@
             <section class="scene scrollable" id="scene-memories">
               <div class="memory-shell">
                 <div class="eyebrow">A little time capsule</div>
-                <h1 class="memory-title">My Memories<br /><span>of Chaw ✨</span></h1>
-                <p class="memory-intro">บางช่วงเวลาอาจผ่านไปเร็ว แต่ความรู้สึกดี ๆ ยังอยู่ตรงนี้เสมอ</p>
-                <div class="memory-collage">
-                  <figure class="memory-card memory-featured"><img src="assets/chaw-birthday-avatar.png" alt="Birthday memory of Chaw" /><figcaption>Birthday boy 🎂</figcaption></figure>
-                  <figure class="memory-card memory-tilt-left"><img class="memory-look memory-look-warm" src="assets/chaw-birthday-avatar.png" alt="ความทรงจำของ Chaw" /><figcaption>วันที่หัวเราะด้วยกัน</figcaption></figure>
-                  <figure class="memory-card memory-tilt-right"><img class="memory-look memory-look-cool" src="assets/chaw-birthday-avatar.png" alt="ความทรงจำของ Chaw" /><figcaption>เรื่องเล็ก ๆ ที่น่าจำ</figcaption></figure>
-                  <figure class="memory-card memory-wide"><img class="memory-look memory-look-night" src="assets/chaw-birthday-avatar.png" alt="ความทรงจำของ Chaw" /><figcaption>คืนที่อยากหยุดเวลาไว้</figcaption></figure>
-                  <figure class="memory-card memory-tilt-left"><img class="memory-look memory-look-mint" src="assets/chaw-birthday-avatar.png" alt="ความทรงจำของ Chaw" /><figcaption>ทริปที่ยังคิดถึง</figcaption></figure>
-                  <figure class="memory-card memory-tilt-right"><img class="memory-look memory-look-pink" src="assets/chaw-birthday-avatar.png" alt="ความทรงจำของ Chaw" /><figcaption>ยิ้มแบบนี้ไปนาน ๆ นะ</figcaption></figure>
-                </div>
-                <div class="memory-film" aria-label="ภาพความทรงจำของ Chaw">
-                  <div><img src="assets/chaw-birthday-avatar.png" alt="Chaw memory 1" /></div>
-                  <div><img src="assets/chaw-birthday-avatar.png" alt="Chaw memory 2" /></div>
-                  <div><img src="assets/chaw-birthday-avatar.png" alt="Chaw memory 3" /></div>
-                  <div><img src="assets/chaw-birthday-avatar.png" alt="Chaw memory 4" /></div>
-                </div>
-                <p class="memory-note">ทุกภาพคือช่วงเวลาของ Chaw 💖</p>
+                <h1 class="memory-title" id="memoryTitle"></h1>
+                <p class="memory-intro" id="memoryIntro"></p>
+                <div class="memory-collage" id="memoryCollage"></div>
+                <div class="memory-film" id="memoryFilm" aria-label="ภาพความทรงจำ"></div>
+                <p class="memory-note" id="memoryNote"></p>
                 <div class="buttons memory-actions">
                   <button class="secondary" onclick="showScene('final')">← กลับ</button>
                   <button class="primary" onclick="restartExperience()">เริ่มใหม่ ✨</button>
                 </div>
               </div>
             </section>
-
-            <button
-              class="collection-fab"
-              id="collectionFab"
-              onclick="showScene('summary')"
-              style="display: none"
-            >
-              🎁<b id="fabCount">0</b>
-            </button>
 
             <div class="reveal-overlay" id="revealOverlay">
               <div id="revealBallWrap">
@@ -2306,6 +2264,7 @@ Build incrementally, but keep the complete end-to-end flow working.</pre
       </div>
     </div>
 
+    <script src="default-config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

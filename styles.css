@@ -338,13 +338,6 @@ button { -webkit-tap-highlight-color:transparent; }
 .rarity.rare { background:rgba(185,167,255,.18); color:#e7ddff; }
 .rarity.special { background:rgba(255,216,138,.18); color:#ffe7ad; box-shadow:0 0 30px rgba(255,216,138,.18); }
 
-.collection-fab {
-  position:absolute; right:16px; bottom:18px; z-index:45;
-  width:54px;height:54px;border-radius:18px;border:1px solid rgba(255,255,255,.15);background:rgba(15,9,28,.55);
-  color:white;display:grid;place-items:center;cursor:pointer;box-shadow:0 12px 30px rgba(0,0,0,.22);backdrop-filter:blur(14px);
-}
-.collection-fab b { position:absolute;right:-3px;top:-5px;background:#ff8fb8;color:#2a1322;border-radius:999px;min-width:22px;height:22px;display:grid;place-items:center;font-size:11px; }
-
 .gift-grid { display:grid;grid-template-columns:1fr 1fr;gap:11px;width:100%;padding-bottom:25px; }
 .gift-mini {
   min-height:138px;padding:14px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.075);text-align:left;
