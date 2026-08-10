@@ -138,9 +138,12 @@ function applyExperienceConfig(nextConfig,{restart=true,allowInvalid=false}={}) 
 
 window.applyExperienceConfig=applyExperienceConfig;
 window.addEventListener('message',event=>{
-  if(event.source!==window.parent || event.data?.type!=='HBD_PREVIEW_CONFIG') return;
-  const validation=applyExperienceConfig(event.data.config,{allowInvalid:true});
-  window.parent.postMessage({type:'HBD_PREVIEW_RESULT',validation},'*');
+  if(event.source!==window.parent)return;
+  if(event.data?.type==='HBD_PREVIEW_CONFIG'){
+    const validation=applyExperienceConfig(event.data.config,{allowInvalid:true});
+    window.parent.postMessage({type:'HBD_PREVIEW_RESULT',validation},'*');
+  }
+  if(event.data?.type==='HBD_PREVIEW_SCENE')jumpScene(event.data.scene);
 });
 
 function sparkleInit() {
@@ -525,10 +528,14 @@ function restartExperience() {
   showScene('intro');
 }
 function jumpScene(name) {
+  if(name==='intro') { restartExperience(); return; }
   if(name==='cake') { stopMic(); state.blowCompleted=false; renderCandles(); showScene('cake'); }
+  if(name==='message') showScene('message');
   if(name==='quiz') startQuiz();
   if(name==='gift') { state.score=8; enterGift(); }
   if(name==='summary') { state.gifts=gifts.slice(0,8); renderSummary(); showScene('summary'); }
+  if(name==='final') showScene('final');
+  if(name==='memories') { renderMemoriesFromConfig(); showScene('memories'); }
 }
 
 let currentDoc='spec';

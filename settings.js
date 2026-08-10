@@ -2,6 +2,7 @@ const SETTINGS_STORAGE_KEY='hbd-experience-draft-v1';
 const defaults=window.DEFAULT_EXPERIENCE_CONFIG;
 const form=document.getElementById('settingsForm');
 const previewFrame=document.getElementById('previewFrame');
+let draftLoadNotice='';
 let draftConfig=loadDraft();
 let saveTimer=null;
 let previewTimer=null;
@@ -18,8 +19,23 @@ function merge(defaultValue,customValue){
   return customValue===undefined||customValue===null?defaultValue:customValue;
 }
 function loadDraft(){
-  try{const stored=localStorage.getItem(SETTINGS_STORAGE_KEY);return stored?merge(defaults,JSON.parse(stored)):clone(defaults);}
+  try{
+    const stored=localStorage.getItem(SETTINGS_STORAGE_KEY);if(!stored)return clone(defaults);
+    const parsed=JSON.parse(stored),fromVersion=Number(parsed?.schemaVersion)||1,migrated=migrateConfig(parsed);
+    if(fromVersion<defaults.schemaVersion)draftLoadNotice=`อัปเดต Draft จาก Schema v${fromVersion} เป็น v${defaults.schemaVersion} แล้ว`;
+    return merge(defaults,migrated);
+  }
   catch(error){console.warn('Draft load error:',error);return clone(defaults);}
+}
+function migrateConfig(input){
+  const config=clone(input&&typeof input==='object'?input:{}),version=Number(config.schemaVersion)||1;
+  if(version<2){
+    config.birthday=config.birthday||{};
+    config.birthday.avatarEditor=config.birthday.avatarEditor||{sourceUrl:config.birthday.avatarUrl||defaults.birthday.avatarUrl,zoom:1,offsetX:0,offsetY:0,hatEnabled:false};
+    config.memories=config.memories||{};
+    if(!Array.isArray(config.memories.filmItemIds))config.memories.filmItemIds=[];
+  }
+  config.schemaVersion=defaults.schemaVersion;return config;
 }
 function getPath(object,path){return path.split('.').reduce((value,key)=>value?.[key],object);}
 function setPath(object,path,value){
@@ -46,9 +62,11 @@ function syncAvatarControls(){
   const source=editor.sourceUrl||draftConfig.birthday.avatarUrl;
   document.getElementById('avatarUrlInput').value=source;
   const image=document.getElementById('avatarEditorImage');
-  image.classList.remove('image-error');image.src=source;
-  image.onload=()=>document.getElementById('avatarError').textContent='';
-  image.onerror=()=>{image.classList.add('image-error');document.getElementById('avatarError').textContent='เปิดรูปนี้ไม่ได้ กรุณาตรวจ URL และสิทธิ์การเข้าถึง';};
+  const status=document.getElementById('avatarUrlStatus');status.className='url-status loading';status.textContent='กำลังตรวจสอบรูป...';
+  image.classList.remove('image-error');
+  image.onload=()=>{document.getElementById('avatarError').textContent='';status.className='url-status success';status.textContent='เปิดรูปสำเร็จ ✓';};
+  image.onerror=()=>{image.classList.add('image-error');document.getElementById('avatarError').textContent='เปิดรูปนี้ไม่ได้ กรุณาตรวจ URL และสิทธิ์การเข้าถึง';status.className='url-status error';status.textContent='เปิดรูปไม่ได้ — ตรวจ URL หรือสิทธิ์ Google Drive';};
+  image.src=source;
   renderAvatarEditor(false);
 }
 
@@ -207,12 +225,13 @@ function createMemory(index){
   return {id:`m-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,imageUrl:'',caption:'',layout:layouts[index%layouts.length],look:''};
 }
 
-function memoryImage(container,url){
+function memoryImage(container,url,status){
   container.innerHTML='';
-  if(!url){container.textContent='📷';return;}
+  if(!url){container.textContent='📷';if(status){status.className='url-status';status.textContent='ยังไม่ได้ใส่ URL';}return;}
+  if(status){status.className='url-status loading';status.textContent='กำลังตรวจสอบรูป...';}
   const image=document.createElement('img');image.src=url;image.alt='Memory preview';image.referrerPolicy='no-referrer';
-  image.addEventListener('error',()=>{image.classList.add('image-error');container.dataset.error='true';container.title='เปิดรูปไม่ได้ กรุณาตรวจ URL และสิทธิ์การเข้าถึง';});
-  image.addEventListener('load',()=>{container.dataset.error='false';container.title='';});container.appendChild(image);
+  image.addEventListener('error',()=>{image.classList.add('image-error');container.dataset.error='true';container.title='เปิดรูปไม่ได้ กรุณาตรวจ URL และสิทธิ์การเข้าถึง';if(status){status.className='url-status error';status.textContent='เปิดรูปไม่ได้ — ตรวจ URL หรือสิทธิ์ Google Drive';}});
+  image.addEventListener('load',()=>{container.dataset.error='false';container.title='';if(status){status.className='url-status success';status.textContent='เปิดรูปสำเร็จ ✓';}});container.appendChild(image);
 }
 
 function renderMemoryBuilder(openIndex){
@@ -237,8 +256,9 @@ function renderMemoryBuilder(openIndex){
     if(filmIds.includes(item.id)){const film=document.createElement('span');film.className='memory-film-pill';film.textContent='FILM';summary.append(thumb,copy,film);}else summary.append(thumb,copy);
     const chevron=document.createElement('span');chevron.className='question-chevron';chevron.textContent='⌄';summary.appendChild(chevron);card.appendChild(summary);
     const body=document.createElement('div');body.className='memory-editor-body';
-    const preview=document.createElement('div');preview.className='memory-image-preview';memoryImage(preview,item.imageUrl);body.appendChild(preview);
+    const preview=document.createElement('div');preview.className='memory-image-preview';body.appendChild(preview);
     const urlField=document.createElement('label');urlField.className='field';urlField.innerHTML=`<span>ลิงก์รูปภาพ</span><input data-memory-field="imageUrl" maxlength="${EXPERIENCE_LIMITS.memoryUrl}" placeholder="https://... หรือ Google Drive Share Link"><em data-error="memories.items.${index}.imageUrl"></em>`;urlField.querySelector('input').value=item.imageUrl;body.appendChild(urlField);
+    const urlStatus=document.createElement('div');urlStatus.className='url-status';body.appendChild(urlStatus);memoryImage(preview,item.imageUrl,urlStatus);
     const captionField=document.createElement('label');captionField.className='field';captionField.innerHTML=`<span>ข้อความบนภาพ</span><input data-memory-field="caption" maxlength="${EXPERIENCE_LIMITS.memoryCaption}"><small class="counter"></small><em data-error="memories.items.${index}.caption"></em>`;captionField.querySelector('input').value=item.caption;captionField.querySelector('.counter').textContent=`${item.caption.length} / ${EXPERIENCE_LIMITS.memoryCaption}`;body.appendChild(captionField);
     const choices=document.createElement('div');choices.className='field-grid two-columns';
     const layoutField=document.createElement('label');layoutField.className='field';layoutField.innerHTML='<span>รูปแบบการวาง</span><select data-memory-field="layout"><option value="">Standard</option><option value="featured">Featured — รูปเด่น</option><option value="wide">Wide — แนวนอน</option><option value="tilt-left">เอียงซ้าย</option><option value="tilt-right">เอียงขวา</option></select><em data-error="memories.items.'+index+'.layout"></em>';layoutField.querySelector('select').value=item.layout||'';
@@ -322,39 +342,88 @@ function updateDerivedUi(){
   document.querySelector('[data-tab="memories"]').classList.toggle('feature-off',!memoriesEnabled);
 }
 
+function tabForPath(path=''){
+  if(path.startsWith('cake.'))return 'cake';
+  if(path.startsWith('birthday.card.'))return 'card';
+  if(path.startsWith('birthday.avatar'))return 'avatar';
+  if(path.startsWith('quiz.'))return 'quiz';
+  if(path.startsWith('giftBox.'))return 'gifts';
+  if(path.startsWith('memories.'))return 'memories';
+  return 'general';
+}
+function ensureTabBadges(){
+  document.querySelectorAll('[data-tab]').forEach(button=>{
+    if(button.querySelector('.tab-error-badge'))return;
+    const badge=document.createElement('span');badge.className='tab-error-badge';badge.hidden=true;button.appendChild(badge);
+  });
+}
+function focusValidationError(error){
+  const tab=tabForPath(error.path);openSettingsTab(tab);
+  const dynamic=error.path.match(/^(quiz\.questions|giftBox\.gifts|memories\.items)\.(\d+)/);
+  if(dynamic){
+    const selectors={
+      'quiz.questions':'.question-card','giftBox.gifts':'.gift-editor-card','memories.items':'.memory-editor-card'
+    };
+    const card=document.querySelectorAll(selectors[dynamic[1]])[Number(dynamic[2])];if(card)card.open=true;
+  }
+  requestAnimationFrame(()=>{
+    const node=form.querySelector(`[data-error="${error.path}"]`)||document.querySelector(`[data-panel="${tab}"]`);
+    node?.scrollIntoView({behavior:'smooth',block:'center'});
+    node?.closest('.field')?.querySelector('input,textarea,select')?.focus({preventScroll:true});
+  });
+}
+function renderConfigurationReview(validation){
+  const status=document.getElementById('reviewStatus');
+  status.className=`review-status ${validation.valid?'ready':'warning'}`;
+  status.innerHTML=`<b>${validation.valid?'พร้อมใช้งาน ✓':`ยังมี ${validation.errors.length} จุดที่ต้องแก้`}</b><span>${validation.valid?'Configuration ผ่าน Validation และพร้อม Preview':'กดรายการแจ้งเตือนด้านบนเพื่อไปยังช่องที่ต้องแก้'}</span>`;
+  const sizeBytes=new Blob([JSON.stringify(draftConfig)]).size;
+  const metrics=[
+    [draftConfig.quiz.questions.length,'คำถาม'],[draftConfig.giftBox.ballCount,'ลูกบอล'],[draftConfig.memories.items.length,'Memories'],[`${Math.max(1,Math.round(sizeBytes/1024))} KB`,'ขนาด Draft'],[draftConfig.features.quizEnabled?'เปิด':'ปิด','Quiz'],[draftConfig.features.memoriesEnabled?'เปิด':'ปิด','Memories']
+  ];
+  const grid=document.getElementById('reviewGrid');grid.innerHTML='';metrics.forEach(([value,label])=>{const item=document.createElement('div');item.className='review-metric';item.innerHTML=`<b>${value}</b><span>${label}</span>`;grid.appendChild(item);});
+  const steps=['Intro','Cake','Card'];if(draftConfig.features.quizEnabled)steps.push('Quiz');steps.push('Gift Box','Summary','Final');if(draftConfig.features.memoriesEnabled)steps.push('Memories');
+  const journey=document.getElementById('journeyPreview');journey.innerHTML='';steps.forEach((step,index)=>{if(index){const arrow=document.createElement('span');arrow.className='journey-arrow';arrow.textContent='→';journey.appendChild(arrow);}const node=document.createElement('span');node.className='journey-step';node.textContent=step;journey.appendChild(node);});
+}
 function showValidation(){
-  const validation=validateExperienceConfig(draftConfig);
+  const validation=validateExperienceConfig(draftConfig);ensureTabBadges();
   form.querySelectorAll('[data-error]').forEach(node=>{node.textContent='';node.closest('.field')?.classList.remove('invalid');});
   validation.errors.forEach(error=>{
     const node=form.querySelector(`[data-error="${error.path}"]`);
     if(node){node.textContent=error.message;node.closest('.field')?.classList.add('invalid');}
   });
-  const summary=document.getElementById('validationSummary');
-  if(validation.valid){summary.hidden=true;}
-  else{
-    summary.hidden=false;
-    const visible=validation.errors.slice(0,4).map(error=>`• ${error.message}`).join('<br>');
-    summary.innerHTML=`<b>พบข้อมูลที่ควรแก้ ${validation.errors.length} จุด — Preview ยังดูได้</b><br>${visible}`;
+  document.querySelectorAll('[data-tab]').forEach(button=>{
+    const count=validation.errors.filter(error=>tabForPath(error.path)===button.dataset.tab).length,badge=button.querySelector('.tab-error-badge');badge.hidden=!count;badge.textContent=count;
+  });
+  const summary=document.getElementById('validationSummary');summary.innerHTML='';summary.hidden=validation.valid;
+  if(!validation.valid){
+    const heading=document.createElement('b');heading.textContent=`พบข้อมูลที่ควรแก้ ${validation.errors.length} จุด — กดเพื่อไปยังช่องนั้น`;summary.appendChild(heading);
+    validation.errors.slice(0,8).forEach(error=>{const button=document.createElement('button');button.type='button';button.textContent=`• ${error.message}`;button.addEventListener('click',()=>focusValidationError(error));summary.appendChild(button);});
   }
-  return validation;
+  renderConfigurationReview(validation);return validation;
 }
 
 function scheduleSaveAndPreview(){
   clearTimeout(saveTimer);clearTimeout(previewTimer);
-  document.getElementById('saveStatus').textContent='กำลังบันทึก...';
+  const status=document.getElementById('saveStatus');status.textContent='กำลังบันทึก...';status.classList.remove('validation-ok','save-error');
   saveTimer=setTimeout(saveDraft,450);
   previewTimer=setTimeout(sendPreview,650);
 }
 function saveDraft(){
   try{
     localStorage.setItem(SETTINGS_STORAGE_KEY,JSON.stringify(draftConfig));
-    const status=document.getElementById('saveStatus');status.textContent=`บันทึกแล้ว ${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`;status.classList.add('validation-ok');
-  }catch(error){document.getElementById('saveStatus').textContent='บันทึกไม่สำเร็จ';console.error('Draft save error:',error);}
+    const status=document.getElementById('saveStatus');status.textContent=`บันทึกแล้ว ${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`;status.classList.remove('save-error');status.classList.add('validation-ok');return true;
+  }catch(error){
+    const status=document.getElementById('saveStatus');status.classList.remove('validation-ok');status.classList.add('save-error');
+    status.textContent=error?.name==='QuotaExceededError'?'พื้นที่ Browser เต็ม — Export แล้วลดข้อมูลรูป':'บันทึกไม่สำเร็จ — ลอง Export สำรอง';console.error('Draft save error:',error);return false;
+  }
 }
 function sendPreview(){
   const validation=showValidation();
   document.getElementById('previewStatus').textContent=validation.valid?'กำลังอัปเดต...':`กำลัง Preview พร้อมคำเตือน ${validation.errors.length} จุด...`;
   previewFrame.contentWindow?.postMessage({type:'HBD_PREVIEW_CONFIG',config:clone(draftConfig)},'*');
+}
+function sendPreviewScene(){
+  previewFrame.contentWindow?.postMessage({type:'HBD_PREVIEW_SCENE',scene:document.getElementById('previewScene').value},'*');
 }
 
 form.addEventListener('input',event=>{
@@ -542,13 +611,32 @@ document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener(
 window.addEventListener('hashchange',()=>openSettingsTab(location.hash.slice(1)||'general',{updateHash:false}));
 
 document.getElementById('deviceWidth').addEventListener('change',event=>{document.getElementById('deviceFrame').style.width=`${event.target.value}px`;});
+document.getElementById('previewScene').addEventListener('change',sendPreviewScene);
 document.getElementById('previewBtn').addEventListener('click',()=>{sendPreview();document.getElementById('previewPanel').scrollIntoView({behavior:'smooth',block:'start'});});
 previewFrame.addEventListener('load',()=>setTimeout(sendPreview,120));
 window.addEventListener('message',event=>{
   if(event.source!==previewFrame.contentWindow||event.data?.type!=='HBD_PREVIEW_RESULT')return;
   const validation=event.data.validation;
   document.getElementById('previewStatus').textContent=validation?.valid?'Preview อัปเดตแล้ว':`Preview อัปเดตแล้ว • มีคำเตือน ${validation?.errors?.length||0} จุด`;
+  sendPreviewScene();
 });
+
+function resetSection(section){
+  if(!confirm(`คืนค่าเฉพาะ Section “${section}” เป็น Default?`))return;
+  if(section==='general'){
+    draftConfig.birthday.name=defaults.birthday.name;draftConfig.birthday.age=defaults.birthday.age;draftConfig.birthday.introIcon=defaults.birthday.introIcon;draftConfig.birthday.introLead=defaults.birthday.introLead;draftConfig.features=clone(defaults.features);
+  }
+  if(section==='cake')draftConfig.cake=clone(defaults.cake);
+  if(section==='card')draftConfig.birthday.card=clone(defaults.birthday.card);
+  if(section==='avatar'){
+    draftConfig.birthday.avatarUrl=defaults.birthday.avatarUrl;draftConfig.birthday.avatarAlt=defaults.birthday.avatarAlt;draftConfig.birthday.avatarEditor=clone(defaults.birthday.avatarEditor);
+  }
+  if(section==='quiz')draftConfig.quiz=clone(defaults.quiz);
+  if(section==='gifts')draftConfig.giftBox=clone(defaults.giftBox);
+  if(section==='memories')draftConfig.memories=clone(defaults.memories);
+  renderForm();saveDraft();sendPreview();
+}
+document.querySelectorAll('[data-reset-section]').forEach(button=>button.addEventListener('click',()=>resetSection(button.dataset.resetSection)));
 
 document.getElementById('resetBtn').addEventListener('click',()=>{
   if(!confirm('คืนค่าทุกอย่างเป็น Default? Draft ปัจจุบันจะถูกเขียนทับ'))return;
@@ -563,13 +651,18 @@ document.getElementById('importBtn').addEventListener('click',()=>document.getEl
 document.getElementById('importFile').addEventListener('change',async event=>{
   const file=event.target.files?.[0];if(!file)return;
   try{
+    if(file.size>5*1024*1024)throw new Error('FILE_TOO_LARGE');
     const parsed=JSON.parse(await file.text());
     if(!parsed||typeof parsed!=='object')throw new Error('Invalid configuration');
-    draftConfig=merge(defaults,parsed);renderForm();saveDraft();sendPreview();
-  }catch(error){alert('Import ไม่สำเร็จ: ไฟล์ JSON ไม่ถูกต้อง');console.error('Import error:',error);}
+    const candidate=merge(defaults,migrateConfig(parsed)),validation=validateExperienceConfig(candidate);
+    const impact=[`ชื่อ: ${candidate.birthday.name}`,`คำถาม: ${candidate.quiz.questions.length} ข้อ`,`ลูกบอล: ${candidate.giftBox.ballCount} ลูก`,`Memories: ${candidate.memories.items.length} รูป`,validation.valid?'Validation: ผ่าน':`Validation: ต้องแก้ ${validation.errors.length} จุด`].join('\n');
+    if(!confirm(`ตรวจพบ Configuration ที่จะ Import\n\n${impact}\n\nเขียนทับ Draft ปัจจุบันหรือไม่?`)){event.target.value='';return;}
+    draftConfig=candidate;renderForm();saveDraft();sendPreview();
+  }catch(error){alert(error.message==='FILE_TOO_LARGE'?'Import ไม่สำเร็จ: ไฟล์ต้องไม่เกิน 5 MB':'Import ไม่สำเร็จ: ไฟล์ JSON หรือ Schema ไม่ถูกต้อง');console.error('Import error:',error);}
   event.target.value='';
 });
 window.addEventListener('beforeunload',saveDraft);
 
 renderForm();
 openSettingsTab(location.hash.slice(1)||'general',{updateHash:false});
+if(draftLoadNotice){saveDraft();const status=document.getElementById('saveStatus');status.textContent=draftLoadNotice;status.classList.add('validation-ok');}

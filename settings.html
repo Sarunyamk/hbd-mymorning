@@ -12,7 +12,7 @@
   <body>
     <header class="settings-header">
       <a class="back-link" href="index.html">← Experience</a>
-      <div><b>HBD Builder</b><span id="saveStatus">พร้อมแก้ไข</span></div>
+      <div><b>HBD Builder</b><span id="saveStatus" role="status" aria-live="polite">พร้อมแก้ไข</span></div>
       <div class="header-actions">
         <button class="quiet-btn" id="importBtn">Import</button>
         <button class="quiet-btn" id="exportBtn">Export</button>
@@ -46,9 +46,10 @@
           <button data-tab="quiz">Quiz</button>
           <button data-tab="gifts">Gifts</button>
           <button data-tab="memories">Memories</button>
+          <button data-tab="review">Review</button>
         </nav>
 
-        <div class="validation-summary" id="validationSummary" hidden></div>
+        <div class="validation-summary" id="validationSummary" role="alert" hidden></div>
 
         <form id="settingsForm" novalidate>
           <section class="settings-section active" data-panel="general">
@@ -252,6 +253,7 @@
                   <textarea id="avatarUrlInput" rows="4" maxlength="2048" placeholder="https://... หรือ Google Drive Share Link"></textarea>
                 </label>
                 <p class="avatar-help">Google Drive ต้องเปิดสิทธิ์ “ทุกคนที่มีลิงก์ดูได้” จากนั้นลากรูปด้านขวาเพื่อจัดใบหน้า</p>
+                <div class="url-status" id="avatarUrlStatus" role="status"></div>
               </div>
               <div class="avatar-canvas-wrap" id="avatarCanvasWrap">
                 <div class="avatar-stage" id="avatarStage">
@@ -371,23 +373,54 @@
               <button class="memory-add-button" id="appendMemoryBtn" type="button">＋ เพิ่มรูปความทรงจำ</button>
             </div>
           </section>
+          <section class="settings-section" data-panel="review">
+            <div class="section-heading">
+              <span>08</span>
+              <div><h2>Review</h2><p>ตรวจความพร้อมของ Experience ก่อนนำไปใช้งาน</p></div>
+            </div>
+            <div class="review-status" id="reviewStatus"></div>
+            <div class="review-grid" id="reviewGrid"></div>
+            <div class="review-block">
+              <h3>เส้นทางของ Experience</h3>
+              <div class="journey-preview" id="journeyPreview"></div>
+            </div>
+            <div class="review-block">
+              <h3>คืนค่าเฉพาะ Section</h3>
+              <p>ข้อมูลใน Section อื่นจะไม่ถูกเปลี่ยน</p>
+              <div class="section-reset-grid">
+                <button type="button" data-reset-section="general">General</button>
+                <button type="button" data-reset-section="cake">Cake</button>
+                <button type="button" data-reset-section="card">Card after Cake</button>
+                <button type="button" data-reset-section="avatar">Avatar</button>
+                <button type="button" data-reset-section="quiz">Quiz</button>
+                <button type="button" data-reset-section="gifts">Gifts</button>
+                <button type="button" data-reset-section="memories">Memories</button>
+              </div>
+            </div>
+          </section>
         </form>
       </section>
 
       <aside class="preview-panel" id="previewPanel">
         <div class="preview-toolbar">
           <div>
-            <b>Live Preview</b><span id="previewStatus">กำลังโหลด...</span>
+            <b>Live Preview</b><span id="previewStatus" role="status" aria-live="polite">กำลังโหลด...</span>
           </div>
-          <label
-            >Device
-            <select id="deviceWidth">
+          <div class="preview-controls">
+            <label>Scene
+              <select id="previewScene">
+                <option value="intro">Intro</option><option value="cake">Cake</option><option value="message">Card</option><option value="quiz">Quiz</option><option value="gift">Gift Box</option><option value="summary">Gift Summary</option><option value="final">Final</option><option value="memories">Memories</option>
+              </select>
+            </label>
+            <label>Device
+              <select id="deviceWidth">
               <option value="360">360px</option>
               <option value="375" selected>375px</option>
               <option value="390">390px</option>
               <option value="430">430px</option>
-            </select></label
-          >
+              </select>
+            </label>
+          </div>
         </div>
         <div class="device-stage">
           <div class="device-frame" id="deviceFrame">

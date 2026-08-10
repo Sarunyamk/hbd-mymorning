@@ -1,5 +1,5 @@
 const DEFAULT_EXPERIENCE_CONFIG = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   birthday: {
     name: 'Chaw',
     age: 32,
