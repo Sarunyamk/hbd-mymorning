@@ -1,8 +1,15 @@
 const state = {
   scene:'intro', score:0, qIndex:0, answered:false,
   picks:0, used:0, gifts:[], selectedBall:null,
-  music:true, audioCtx:null, melodyTimer:null, micStream:null, analyser:null, micRAF:null,
-  holdTimer:null, holdValue:0, boxOpened:false
+  music:true, audioCtx:null, melodyTimer:null, micStream:null, micSource:null, analyser:null, micRAF:null,
+  holdTimer:null, holdValue:0, boxOpened:false, blowCompleted:false
+};
+
+const MIC_CONFIG = {
+  threshold: 0.04,
+  requiredFrames: 10,
+  fftSize: 1024,
+  smoothing: 0.6
 };
 
 const questions = [
@@ -57,6 +64,7 @@ function sparkleInit() {
 sparkleInit();
 
 function showScene(name) {
+  if(state.scene==='cake' && name!=='cake') stopMic();
   state.scene=name;
   document.querySelectorAll('.scene').forEach(x=>x.classList.remove('active'));
   const el=document.getElementById('scene-'+name);
@@ -113,6 +121,10 @@ function renderCandles() {
 renderCandles();
 
 function blowSuccess() {
+  if(state.blowCompleted) return;
+  state.blowCompleted=true;
+  stopHoldBlow();
+  stopMic();
   const candles=[...document.querySelectorAll('.candle')];
   candles.forEach((c,i)=>setTimeout(()=>{
     if(c.dataset.out==='1') return;
@@ -121,7 +133,7 @@ function blowSuccess() {
     tone(220+i*40,.12,.025);
   },i*170));
   setTimeout(()=>{
-    stopMic(); document.getElementById('blowStatus').textContent='Wish made! ✨';
+    document.getElementById('blowStatus').textContent='Wish made! ✨';
     celebrate(55);
     setTimeout(()=>showScene('message'),1200);
   },1000);
@@ -129,6 +141,8 @@ function blowSuccess() {
 
 let blowing=false;
 function startHoldBlow() {
+  if(state.blowCompleted || blowing) return;
+  stopMic();
   blowing=true; state.holdValue=0;
   document.getElementById('blowStatus').textContent='กำลังเป่า... 💨';
   state.holdTimer=setInterval(()=>{
@@ -142,17 +156,56 @@ function stopHoldBlow() {
 }
 
 async function enableMic() {
+  const status=document.getElementById('blowStatus');
+  const button=document.getElementById('micBtn');
+  if(state.blowCompleted) return;
+  if(!window.isSecureContext) {
+    status.textContent='การใช้ไมโครโฟนต้องเปิดเว็บไซต์ผ่าน HTTPS';
+    return;
+  }
+  if(!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia!=='function') {
+    status.textContent='Browser นี้ไม่รองรับการเป่าผ่านไมค์ กรุณาใช้ปุ่มกดค้างเพื่อเป่า 💨';
+    return;
+  }
   try {
     stopMic();
-    state.micStream=await navigator.mediaDevices.getUserMedia({audio:true});
-    ensureAudio();
-    const src=state.audioCtx.createMediaStreamSource(state.micStream);
-    state.analyser=state.audioCtx.createAnalyser();state.analyser.fftSize=1024;
-    src.connect(state.analyser);
-    document.getElementById('blowStatus').textContent='เปิดไมค์แล้ว ลองเป่าทางมือถือดู 💨';
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContextClass) throw new DOMException('Web Audio API is unavailable','NotSupportedError');
+    if(!state.audioCtx) state.audioCtx=new AudioContextClass();
+    const resumePromise=state.audioCtx.state==='suspended' ? state.audioCtx.resume() : Promise.resolve();
+
+    try {
+      state.micStream=await navigator.mediaDevices.getUserMedia({audio:{
+        echoCancellation:false,
+        noiseSuppression:false,
+        autoGainControl:false
+      }});
+    } catch(error) {
+      if(!['OverconstrainedError','TypeError','NotSupportedError'].includes(error.name)) throw error;
+      state.micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    }
+    await resumePromise;
+
+    state.micSource=state.audioCtx.createMediaStreamSource(state.micStream);
+    state.analyser=state.audioCtx.createAnalyser();
+    state.analyser.fftSize=MIC_CONFIG.fftSize;
+    state.analyser.smoothingTimeConstant=MIC_CONFIG.smoothing;
+    state.micSource.connect(state.analyser);
+    button.textContent='🎙️ กำลังฟัง...';
+    button.disabled=true;
+    status.textContent='🎙️ ไมค์พร้อมแล้ว ลองเป่าได้เลย';
     monitorMic();
-  } catch(e) {
-    document.getElementById('blowStatus').textContent='เปิดไมค์ไม่ได้ ใช้ปุ่มกดค้างด้านล่างแทนได้เลย';
+  } catch(error) {
+    console.error('Microphone error:',error);
+    stopMic();
+    const messages={
+      NotAllowedError:'ยังไม่ได้อนุญาตให้ใช้ไมโครโฟน กรุณาอนุญาต Microphone ใน Browser หรือใช้ปุ่มกดค้างแทน',
+      NotFoundError:'ไม่พบไมโครโฟนบนอุปกรณ์นี้',
+      NotReadableError:'ไม่สามารถใช้งานไมโครโฟนได้ อาจมีแอปอื่นกำลังใช้งานอยู่',
+      SecurityError:'Browser ไม่อนุญาตให้เว็บไซต์เข้าถึงไมโครโฟน'
+    };
+    const message=messages[error.name]||'เปิดไมค์ไม่สำเร็จ ใช้ปุ่มกดค้างเพื่อเป่าแทนได้เลย 💨';
+    status.textContent=message+' ถ้าเปิดผ่าน Browser ภายในแอปแล้วไมค์ไม่ทำงาน ลองเปิดลิงก์นี้ด้วย Chrome / Safari';
   }
 }
 let sustained=0;
@@ -162,16 +215,20 @@ function monitorMic() {
   state.analyser.getByteTimeDomainData(buf);
   let sum=0; for(const v of buf){const n=(v-128)/128;sum+=n*n;}
   const rms=Math.sqrt(sum/buf.length);
-  const pct=Math.min(100,Math.max(0,(rms-.02)*650));
+  const pct=Math.min(100,Math.max(2,rms/MIC_CONFIG.threshold*72));
   document.getElementById('blowMeter').style.width=pct+'%';
-  if(rms>.075) sustained++; else sustained=Math.max(0,sustained-1);
-  if(sustained>18) { blowSuccess(); return; }
+  if(rms>MIC_CONFIG.threshold) sustained++; else sustained=Math.max(0,sustained-1);
+  if(sustained>=MIC_CONFIG.requiredFrames) { blowSuccess(); return; }
   state.micRAF=requestAnimationFrame(monitorMic);
 }
 function stopMic() {
   if(state.micRAF) cancelAnimationFrame(state.micRAF);
   if(state.micStream) state.micStream.getTracks().forEach(t=>t.stop());
-  state.micStream=null;state.analyser=null;sustained=0;
+  if(state.micSource) state.micSource.disconnect();
+  if(state.analyser) state.analyser.disconnect();
+  state.micRAF=null;state.micStream=null;state.micSource=null;state.analyser=null;sustained=0;
+  const button=document.getElementById('micBtn');
+  if(button) { button.textContent='🎙️ เปิดไมค์เพื่อเป่าจริง'; button.disabled=false; }
 }
 
 function startQuiz() {
@@ -319,13 +376,13 @@ function celebrate(count=35) {
 
 function restartExperience() {
   stopMic(); clearInterval(state.melodyTimer);
-  state.score=0;state.qIndex=0;state.picks=0;state.used=0;state.gifts=[];state.boxOpened=false;
+  state.score=0;state.qIndex=0;state.picks=0;state.used=0;state.gifts=[];state.boxOpened=false;state.blowCompleted=false;
   renderCandles();document.getElementById('blowMeter').style.width='0%';document.getElementById('blowStatus').textContent='';
   document.getElementById('collectionFab').style.display='none';
   showScene('intro');
 }
 function jumpScene(name) {
-  if(name==='cake') { renderCandles(); showScene('cake'); }
+  if(name==='cake') { stopMic(); state.blowCompleted=false; renderCandles(); showScene('cake'); }
   if(name==='quiz') startQuiz();
   if(name==='gift') { state.score=8; enterGift(); }
   if(name==='summary') { state.gifts=gifts.slice(0,8); renderSummary(); showScene('summary'); }

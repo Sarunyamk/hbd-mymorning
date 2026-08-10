@@ -116,15 +116,7 @@
                   กดค้างเพื่อเป่า 💨
                 </button>
               </div>
-              <div
-                id="blowStatus"
-                style="
-                  height: 24px;
-                  margin-top: 10px;
-                  color: #e6d8ed;
-                  font-size: 13px;
-                "
-              ></div>
+              <div id="blowStatus" class="blow-status" role="status" aria-live="polite"></div>
             </section>
 
             <section class="scene" id="scene-message">
@@ -284,10 +276,6 @@
         </div>
       </main>
     </div>
-
-    <button class="pill mobile-doc-btn" onclick="openDocs('spec')">
-      📘 Docs
-    </button>
 
     <div class="doc-overlay" id="docOverlay">
       <button class="doc-close" onclick="closeDocs()">✕ ปิด</button>
