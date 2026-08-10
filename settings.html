@@ -43,7 +43,7 @@
           <button data-tab="cake">Cake</button>
           <button data-tab="card">Card after Cake</button>
           <button data-tab="avatar">Avatar</button>
-          <button data-tab="quiz">Quiz <small>ถัดไป</small></button>
+          <button data-tab="quiz">Quiz</button>
           <button data-tab="gifts">Gifts <small>ถัดไป</small></button>
           <button data-tab="memories">Memories <small>ถัดไป</small></button>
         </nav>
@@ -96,6 +96,22 @@
                   type="checkbox"
                   data-path="features.quizEnabled" /><i></i
               ></label>
+            </div>
+            <div class="direct-gift-pick-settings" id="directGiftPickSettings" hidden>
+              <div>
+                <b>จำนวนของขวัญที่เปิดได้</b>
+                <span>ใช้เมื่อปิด Quiz • เลือกได้ไม่เกินจำนวนลูกบอลที่มี</span>
+              </div>
+              <label class="field range-field">
+                <span><b id="directGiftPickValue">8</b> ชิ้น</span>
+                <input
+                  type="range"
+                  data-path="giftBox.pickLimitWithoutQuiz"
+                  min="1"
+                  max="25"
+                  step="1"
+                /><em data-error="giftBox.pickLimitWithoutQuiz"></em>
+              </label>
             </div>
             <div class="toggle-card">
               <div>
@@ -264,11 +280,33 @@
               <em data-error="birthday.avatarUrl"></em>
             </div>
           </section>
-          <section class="settings-section coming-soon" data-panel="quiz">
-            <div>
-              ❓
-              <h2>Quiz builder</h2>
-              <p>รอบถัดไปจะเพิ่มตัวแก้คำถาม 5–25 ข้อและคำตอบ 2–4 ตัวเลือก</p>
+          <section class="settings-section" data-panel="quiz">
+            <div class="section-heading">
+              <span>05</span>
+              <div>
+                <h2>Quiz</h2>
+                <p>สร้างคำถาม 5–25 ข้อ พร้อมกำหนดคำตอบที่ถูก</p>
+              </div>
+            </div>
+            <div class="conditional-note" id="quizDisabledNote" hidden>
+              <b>Quiz ถูกปิดอยู่</b>
+              <span>เปิด Quiz Section ที่หน้า General ก่อน จึงจะแก้ชุดคำถามได้</span>
+            </div>
+            <div id="quizBuilderContent">
+              <div class="quiz-builder-toolbar">
+                <div>
+                  <b>จำนวนคำถาม</b>
+                  <span>อย่างน้อย 5 และสูงสุด 25 ข้อ</span>
+                </div>
+                <div class="count-stepper">
+                  <button type="button" id="removeQuestionBtn" aria-label="ลดคำถาม">−</button>
+                  <input id="questionCount" type="number" min="5" max="25" inputmode="numeric" aria-label="จำนวนคำถาม" />
+                  <button type="button" id="addQuestionBtn" aria-label="เพิ่มคำถาม">+</button>
+                </div>
+              </div>
+              <em class="collection-error" data-error="quiz.questions"></em>
+              <div class="question-list" id="questionList"></div>
+              <button class="quiz-add-question" id="appendQuestionBtn" type="button">＋ เพิ่มคำถามใหม่</button>
             </div>
           </section>
           <section class="settings-section coming-soon" data-panel="gifts">
