@@ -10,6 +10,7 @@ import {
   setExperienceArchived,
   unpublishExperience,
 } from './experience-service.js';
+import QRCode from 'qrcode';
 
 const grid = document.getElementById('experienceGrid');
 const status = document.getElementById('cloudStatus');
@@ -20,6 +21,10 @@ const nameInput = document.getElementById('experienceName');
 let experiences = [];
 let filter = 'active';
 let dialogAction = null;
+const shareDialog = document.getElementById('shareDialog');
+const qrCanvas = document.getElementById('qrCanvas');
+let shareExperience = null;
+let qrTheme = 'cake';
 
 function clone(value) {
   return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
@@ -45,6 +50,58 @@ function publicExperienceUrl(publicId) {
   return url.href;
 }
 
+function roundedRect(context, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  context.beginPath();
+  context.moveTo(x + r, y);
+  context.arcTo(x + width, y, x + width, y + height, r);
+  context.arcTo(x + width, y + height, x, y + height, r);
+  context.arcTo(x, y + height, x, y, r);
+  context.arcTo(x, y, x + width, y, r);
+  context.closePath();
+}
+
+async function renderBirthdayQr() {
+  if (!shareExperience?.public_id) return;
+  const url = publicExperienceUrl(shareExperience.public_id);
+  const qr = document.createElement('canvas');
+  await QRCode.toCanvas(qr, url, {
+    errorCorrectionLevel: 'H', width: 600, margin: 3,
+    color: { dark: '#241331ff', light: '#ffffffff' },
+  });
+  const context = qrCanvas.getContext('2d');
+  const gradient = context.createLinearGradient(0, 0, 900, 1100);
+  gradient.addColorStop(0, qrTheme === 'cake' ? '#ffb7d2' : '#ffd98b');
+  gradient.addColorStop(.52, '#c9b5ff');
+  gradient.addColorStop(1, qrTheme === 'cake' ? '#7c4b91' : '#e982a9');
+  context.fillStyle = gradient; context.fillRect(0, 0, 900, 1100);
+  context.globalAlpha = .28; context.fillStyle = '#ffffff';
+  [[90,100,18],[790,120,11],[825,870,22],[85,940,13],[760,1010,8]].forEach(([x,y,r]) => { context.beginPath(); context.arc(x,y,r,0,Math.PI*2); context.fill(); });
+  context.globalAlpha = 1;
+  roundedRect(context, 55, 55, 790, 990, 52); context.fillStyle = '#fff9fc'; context.fill();
+  context.fillStyle = '#7a426e'; context.textAlign = 'center'; context.font = '900 34px Inter, sans-serif'; context.letterSpacing = '5px'; context.fillText('HAPPY BIRTHDAY', 450, 135); context.letterSpacing = '0px';
+  context.fillStyle = '#9a789a'; context.font = '600 20px Inter, sans-serif'; context.fillText('SCAN FOR A LITTLE SURPRISE', 450, 174);
+  roundedRect(context, 125, 205, 650, 650, 34); context.fillStyle = '#ffffff'; context.fill();
+  context.drawImage(qr, 150, 230, 600, 600);
+  roundedRect(context, 391, 471, 118, 118, 30); context.fillStyle = '#ffffff'; context.fill();
+  context.strokeStyle = qrTheme === 'cake' ? '#ff9fc8' : '#ffc45d'; context.lineWidth = 7; context.stroke();
+  context.font = '72px "Apple Color Emoji","Segoe UI Emoji",sans-serif'; context.textBaseline = 'middle'; context.fillStyle = '#241331'; context.fillText(qrTheme === 'cake' ? '🎂' : '🎁', 450, 534);
+  context.textBaseline = 'alphabetic'; context.fillStyle = '#39213f'; context.font = '900 34px Inter,"Noto Sans Thai",sans-serif';
+  const name = String(shareExperience.title || 'Birthday Surprise').slice(0, 36); context.fillText(name, 450, 920);
+  context.fillStyle = '#947d98'; context.font = '600 20px Inter,"Noto Sans Thai",sans-serif'; context.fillText('เปิดกล้องแล้วสแกนเพื่อรับของขวัญ ✨', 450, 963);
+  document.getElementById('shareStatus').textContent = `QR ธีม${qrTheme === 'cake' ? 'เค้ก' : 'ของขวัญ'}พร้อมใช้งาน`;
+}
+
+async function openShareDialog(experience) {
+  shareExperience = experience; qrTheme = 'cake';
+  document.querySelectorAll('[data-qr-theme]').forEach((button) => button.classList.toggle('active', button.dataset.qrTheme === qrTheme));
+  document.getElementById('shareTitle').textContent = `QR — ${experience.title}`;
+  document.getElementById('shareUrl').value = publicExperienceUrl(experience.public_id);
+  shareDialog.showModal();
+  document.getElementById('shareStatus').textContent = 'กำลังสร้าง QR…';
+  try { await renderBirthdayQr(); } catch (error) { console.error('QR render error:', error); document.getElementById('shareStatus').textContent = 'สร้าง QR ไม่สำเร็จ'; }
+}
+
 function visibleExperiences() {
   if (filter === 'archived') return experiences.filter((item) => item.status === 'archived');
   if (filter === 'active') return experiences.filter((item) => item.status !== 'archived');
@@ -68,7 +125,7 @@ function render() {
     const archived = item.status === 'archived';
     const displayStatus = archived ? 'Archived' : item.status === 'published' ? 'Published' : 'Draft';
     const publishActions = archived ? '' : item.status === 'published'
-      ? `<div class="publish-actions"><a href="${publicExperienceUrl(item.public_id)}" target="_blank" rel="noopener">Open HBD ↗</a><button data-action="republish">Republish</button><button data-action="unpublish">Unpublish</button></div>`
+      ? `<div class="publish-actions"><button data-action="share">Share / QR 🎂</button><a href="${publicExperienceUrl(item.public_id)}" target="_blank" rel="noopener">Open HBD ↗</a><button data-action="republish">Republish</button><button data-action="unpublish">Unpublish</button></div>`
       : '<div class="publish-actions"><button class="publish" data-action="publish">Publish HBD ✨</button></div>';
     card.innerHTML = `<div class="card-top"><span class="status-pill ${item.status}">${displayStatus}</span><span class="status-pill">Schema v${item.schema_version}</span></div><h2></h2><time datetime="${item.updated_at}">แก้ไข ${formatDate(item.updated_at)}</time>${publishActions}<div class="card-actions"><a class="edit" href="settings.html?experience=${encodeURIComponent(item.id)}">แก้ไข Settings</a><button data-action="rename">Rename</button><button data-action="duplicate">Duplicate</button><button data-action="archive">${archived ? 'Restore' : 'Archive'}</button><button class="danger" data-action="delete">Delete</button></div>`;
     card.querySelector('h2').textContent = item.title;
@@ -154,6 +211,7 @@ grid.addEventListener('click', async (event) => {
   const item = experiences.find((entry) => entry.id === card.dataset.id);
   if (!item) return;
   const action = button.dataset.action;
+  if (action === 'share') { openShareDialog(item); return; }
   if (action === 'rename') {
     requestName({ title: 'เปลี่ยนชื่องาน', eyebrow: 'Rename experience', value: item.title, action: async (title) => { await renameExperience(item.id, title); await refresh({ allowCache: false }); } });
     return;
@@ -187,5 +245,27 @@ window.addEventListener('online', () => refresh());
 window.addEventListener('offline', () => { setStatus('Offline — การแก้ไขจะเก็บใน Browser', 'offline'); });
 window.addEventListener('hbd:auth-ready', (event) => {
   if (event.detail?.profile?.role === 'admin') document.getElementById('adminLink').hidden = false;
+});
+document.getElementById('closeShareBtn').addEventListener('click', () => shareDialog.close());
+document.querySelector('.qr-themes').addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-qr-theme]'); if (!button) return;
+  qrTheme = button.dataset.qrTheme;
+  document.querySelectorAll('[data-qr-theme]').forEach((item) => item.classList.toggle('active', item === button));
+  document.getElementById('shareStatus').textContent = 'กำลังเปลี่ยนธีม…'; await renderBirthdayQr();
+});
+document.getElementById('copyLinkBtn').addEventListener('click', async () => {
+  const input = document.getElementById('shareUrl');
+  try { await navigator.clipboard.writeText(input.value); document.getElementById('shareStatus').textContent = 'คัดลอกลิงก์แล้ว ✓'; }
+  catch { input.select(); document.execCommand('copy'); document.getElementById('shareStatus').textContent = 'คัดลอกลิงก์แล้ว ✓'; }
+});
+document.getElementById('openHbdBtn').addEventListener('click', () => window.open(document.getElementById('shareUrl').value, '_blank', 'noopener'));
+document.getElementById('downloadQrBtn').addEventListener('click', () => {
+  qrCanvas.toBlob((blob) => {
+    if (!blob) { document.getElementById('shareStatus').textContent = 'ดาวน์โหลดไม่สำเร็จ'; return; }
+    const url = URL.createObjectURL(blob), link = document.createElement('a');
+    const filename = String(shareExperience?.title || 'birthday').replace(/[^a-z0-9ก-๙]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+    link.href = url; link.download = `hbd-${filename || 'surprise'}-${qrTheme}-qr.png`; link.click(); URL.revokeObjectURL(url);
+    document.getElementById('shareStatus').textContent = 'ดาวน์โหลด QR PNG แล้ว ✓';
+  }, 'image/png');
 });
 refresh();

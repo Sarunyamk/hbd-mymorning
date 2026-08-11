@@ -6,9 +6,10 @@
     <title>My Birthday Experiences</title>
     <script>document.documentElement.classList.add('auth-checking');</script>
     <link rel="stylesheet" href="dashboard.css" />
+    <link rel="stylesheet" href="qr-share.css" />
     <style>
       .status-pill.published{background:#183e34;color:#9ce5c9}
-      .publish-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:20px;padding:10px;border:1px solid rgba(143,224,189,.2);border-radius:14px;background:rgba(74,190,139,.055)}
+      .publish-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:20px;padding:10px;border:1px solid rgba(143,224,189,.2);border-radius:14px;background:rgba(74,190,139,.055)}
       .publish-actions a,.publish-actions button{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:9px 6px;background:rgba(255,255,255,.04);color:#dffbed;text-align:center;text-decoration:none;font-size:11px;cursor:pointer}
       .publish-actions .publish{grid-column:1/-1;border:0;background:linear-gradient(135deg,#a9f2d6,#d4c4ff);color:#1b2824;font-weight:900}
       .publish-actions button:disabled{opacity:.45;cursor:not-allowed}
@@ -38,6 +39,19 @@
         <label><span>ชื่อ Birthday Experience</span><input id="experienceName" maxlength="80" required /></label>
         <div class="dialog-actions"><button value="cancel" class="secondary">ยกเลิก</button><button value="confirm" id="nameConfirm" class="primary">บันทึก</button></div>
       </form>
+    </dialog>
+    <dialog id="shareDialog" class="share-dialog">
+      <div class="share-head"><div><p class="eyebrow">Share birthday magic</p><h2 id="shareTitle">HBD QR Code</h2></div><button id="closeShareBtn" type="button" aria-label="ปิด">×</button></div>
+      <div class="share-layout">
+        <div class="qr-preview"><canvas id="qrCanvas" width="900" height="1100"></canvas></div>
+        <div class="share-controls">
+          <div><b>เลือกรูปตรงกลาง QR</b><div class="qr-themes"><button class="active" data-qr-theme="cake" type="button">🎂 เค้ก</button><button data-qr-theme="gift" type="button">🎁 ของขวัญ</button></div></div>
+          <label><span>Public URL</span><input id="shareUrl" readonly /></label>
+          <p id="shareStatus" role="status" aria-live="polite">QR พร้อมใช้งาน</p>
+          <div class="share-actions"><button id="copyLinkBtn" type="button">Copy Link</button><button id="openHbdBtn" type="button">Open HBD ↗</button><button class="download" id="downloadQrBtn" type="button">Download QR PNG</button></div>
+          <small>QR เก็บเฉพาะลิงก์ หาก Republish ข้อมูลใหม่ QR เดิมยังใช้ได้</small>
+        </div>
+      </div>
     </dialog>
     <script src="default-config.js"></script>
     <script src="config-validator.js"></script>

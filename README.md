@@ -379,6 +379,15 @@ https://your-domain.com/?id=PUBLIC_ID
 - ตรวจ RLS และ Security Advisor ก่อน Production
 - Deploy Static Frontend ขึ้น Hosting ที่รองรับ HTTPS
 
+Dashboard ของ Published Experience มี **Share / QR** แล้ว โดย QR เข้ารหัสเฉพาะ
+Public URL และใช้ Error Correction ระดับ `H` เพื่อให้วางไอคอนตรงกลางได้อย่าง
+ปลอดภัยขึ้น ผู้สร้างเลือกธีมเค้ก 🎂 หรือของขวัญ 🎁, Copy Link, เปิด HBD และ
+ดาวน์โหลด PNG ขนาด 900×1100 px ได้
+
+การแก้ Draft ไม่เปลี่ยนหน้าที่ QR เปิดจนกว่าจะกด Republish เมื่อ Republish แล้ว
+QR เดิมจะเห็นข้อมูลใหม่เพราะ `public_id` ไม่เปลี่ยน ส่วน Unpublish ทำให้ QR เดิม
+เปิดไม่ได้ชั่วคราว และ Delete ทำให้ลิงก์นั้นใช้ไม่ได้ถาวร
+
 ### ลำดับดำเนินงานจากปัจจุบัน
 
 ```text
