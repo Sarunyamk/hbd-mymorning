@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>HBD Experience Settings</title>
+    <script>document.documentElement.classList.add('auth-checking');</script>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <header class="settings-header">
+      <a class="back-link" href="index.html">← Experience</a>
+      <div><b>HBD Builder</b><span id="saveStatus" role="status" aria-live="polite">พร้อมแก้ไข</span></div>
+      <div class="header-actions">
+        <button class="quiet-btn" id="importBtn">Import</button>
+        <button class="quiet-btn" id="exportBtn">Export</button>
+        <button class="quiet-btn danger" id="resetBtn">Default</button>
+        <button class="preview-btn" id="previewBtn">Preview ✨</button>
+      </div>
+      <div class="settings-account">
+        <span id="accountEmail">Creator</span>
+        <button class="quiet-btn" id="logoutBtn" type="button">Logout</button>
+      </div>
+      <input
+        type="file"
+        id="importFile"
+        accept="application/json,.json"
+        hidden
+      />
+    </header>
+
+    <main class="builder-layout">
+      <section class="editor-panel">
+        <div class="builder-intro">
+          <div class="eyebrow">Experience configuration</div>
+          <h1>Customize Birthday</h1>
+          <p>
+            ค่าที่แก้จะบันทึกเป็น Draft ใน Browser และส่งไปยัง Preview ด้วย
+            Renderer เดียวกับหน้าใช้งานจริง
+          </p>
+        </div>
+
+        <nav class="settings-tabs" aria-label="Settings sections">
+          <button class="active" data-tab="general">General</button>
+          <button data-tab="cake">Cake</button>
+          <button data-tab="card">Card after Cake</button>
+          <button data-tab="avatar">Avatar</button>
+          <button data-tab="quiz">Quiz</button>
+          <button data-tab="gifts">Gifts</button>
+          <button data-tab="memories">Memories</button>
+          <button data-tab="review">Review</button>
+        </nav>
+
+        <div class="validation-summary" id="validationSummary" role="alert" hidden></div>
+
+        <form id="settingsForm" novalidate>
+          <section class="settings-section active" data-panel="general">
+            <div class="section-heading">
+              <span>01</span>
+              <div>
+                <h2>General</h2>
+                <p>ข้อมูลหลักและเส้นทางของ Experience</p>
+              </div>
+            </div>
+            <div class="field-grid two-columns">
+              <label class="field"
+                ><span>ชื่อเจ้าของวันเกิด</span
+                ><input data-path="birthday.name" maxlength="18" /><small
+                  class="counter"
+                  data-counter="birthday.name"
+                ></small
+                ><em data-error="birthday.name"></em
+              ></label>
+              <label class="field"
+                ><span>อายุ</span
+                ><input
+                  type="number"
+                  data-path="birthday.age"
+                  min="1"
+                  max="120" /><em data-error="birthday.age"></em
+              ></label>
+            </div>
+            <label class="field"
+              ><span>ข้อความหน้าแรก</span
+              ><textarea
+                data-path="birthday.introLead"
+                rows="3"
+                maxlength="120"
+              ></textarea
+              ><small class="counter" data-counter="birthday.introLead"></small
+              ><em data-error="birthday.introLead"></em
+            ></label>
+            <div class="toggle-card">
+              <div>
+                <b>Quiz Section</b><span>เปิดคำถามก่อนเข้าสู่ Gift Box</span>
+              </div>
+              <label class="switch"
+                ><input
+                  type="checkbox"
+                  data-path="features.quizEnabled" /><i></i
+              ></label>
+            </div>
+            <div class="direct-gift-pick-settings" id="directGiftPickSettings" hidden>
+              <div>
+                <b>จำนวนของขวัญที่เปิดได้</b>
+                <span>ใช้เมื่อปิด Quiz • เลือกได้ไม่เกินจำนวนลูกบอลที่มี</span>
+              </div>
+              <label class="field range-field">
+                <span><b id="directGiftPickValue">8</b> ชิ้น</span>
+                <input
+                  type="range"
+                  data-path="giftBox.pickLimitWithoutQuiz"
+                  min="1"
+                  max="25"
+                  step="1"
+                /><em data-error="giftBox.pickLimitWithoutQuiz"></em>
+              </label>
+            </div>
+            <div class="toggle-card">
+              <div>
+                <b>Memories Section</b
+                ><span>แสดงอัลบั้ม Memories หลังหน้า Final</span>
+              </div>
+              <label class="switch"
+                ><input
+                  type="checkbox"
+                  data-path="features.memoriesEnabled" /><i></i
+              ></label>
+            </div>
+          </section>
+
+          <section class="settings-section" data-panel="cake">
+            <div class="section-heading">
+              <span>02</span>
+              <div>
+                <h2>Cake</h2>
+                <p>
+                  ใช้ <code>{name}</code> และ <code>{age}</code> เพื่อดึงข้อมูล
+                  General
+                </p>
+              </div>
+            </div>
+            <label class="field"
+              ><span>หัวข้อหน้าเค้ก</span
+              ><input data-path="cake.title" maxlength="30" /><small
+                class="counter"
+                data-counter="cake.title"
+              ></small
+              ><em data-error="cake.title"></em
+            ></label>
+            <label class="field"
+              ><span>คำแนะนำการเป่า</span
+              ><textarea
+                data-path="cake.instruction"
+                rows="3"
+                maxlength="100"
+              ></textarea
+              ><small class="counter" data-counter="cake.instruction"></small
+              ><em data-error="cake.instruction"></em
+            ></label>
+            <div class="field-grid two-columns">
+              <label class="field"
+                ><span>ข้อความเค้กชั้นบน</span
+                ><input data-path="cake.topText" maxlength="30" /><small
+                  class="counter"
+                  data-counter="cake.topText"
+                ></small
+                ><em data-error="cake.topText"></em
+              ></label>
+              <label class="field"
+                ><span>ข้อความเค้กชั้นล่าง</span
+                ><input data-path="cake.bottomText" maxlength="20" /><small
+                  class="counter"
+                  data-counter="cake.bottomText"
+                ></small
+                ><em data-error="cake.bottomText"></em
+              ></label>
+            </div>
+            <label class="field range-field"
+              ><span>จำนวนเทียน <b id="candleValue">4</b></span
+              ><input
+                type="range"
+                data-path="cake.candleCount"
+                min="1"
+                max="5"
+                step="1" /><em data-error="cake.candleCount"></em
+            ></label>
+            <div class="cake-copy-preview">
+              <span id="cakeTopPreview"></span
+              ><strong id="cakeBottomPreview"></strong>
+            </div>
+          </section>
+
+          <section class="settings-section" data-panel="card">
+            <div class="section-heading">
+              <span>03</span>
+              <div>
+                <h2>Card after Cake</h2>
+                <p>ข้อความอวยพรที่แสดงหลังเป่าเทียนสำเร็จ</p>
+              </div>
+            </div>
+            <label class="field"
+              ><span>หัวข้อ Birthday Card</span
+              ><input data-path="birthday.card.title" maxlength="30" /><small
+                class="counter"
+                data-counter="birthday.card.title"
+              ></small
+              ><em data-error="birthday.card.title"></em
+            ></label>
+            <label class="field"
+              ><span>ข้อความอวยพร</span
+              ><textarea
+                data-path="birthday.card.message"
+                rows="5"
+                maxlength="150"
+              ></textarea
+              ><small
+                class="counter"
+                data-counter="birthday.card.message"
+              ></small
+              ><em data-error="birthday.card.message"></em
+            ></label>
+            <div id="quizCardFields">
+              <label class="field"
+                ><span>หัวข้อก่อนเริ่ม Quiz</span
+                ><input data-path="birthday.card.preQuizTitle" maxlength="30"
+              /><small class="counter" data-counter="birthday.card.preQuizTitle"></small><em data-error="birthday.card.preQuizTitle"></em></label>
+              <label class="field"
+                ><span>คำอธิบายก่อนเริ่ม Quiz</span
+                ><textarea
+                  data-path="birthday.card.preQuizMessage"
+                  rows="3"
+                  maxlength="120"
+                ></textarea><small class="counter" data-counter="birthday.card.preQuizMessage"></small><em data-error="birthday.card.preQuizMessage"></em>
+              </label>
+            </div>
+            <div class="conditional-note" id="noQuizCardNote" hidden>
+              <b>Quiz ถูกปิดอยู่</b>
+              <span>หลัง Birthday Card ระบบจะข้ามไปยัง Gift Box โดยตรง</span>
+            </div>
+          </section>
+
+          <section class="settings-section" data-panel="avatar">
+            <div class="section-heading">
+              <span>04</span>
+              <div>
+                <h2>Avatar</h2>
+                <p>ใส่ลิงก์รูป ลากจัดตำแหน่ง และใส่หมวกวันเกิด</p>
+              </div>
+            </div>
+            <div class="avatar-editor-layout">
+              <div>
+                <label class="field">
+                  <span>ลิงก์รูป Avatar</span>
+                  <textarea id="avatarUrlInput" rows="4" maxlength="2048" placeholder="https://... หรือ Google Drive Share Link"></textarea>
+                </label>
+                <p class="avatar-help">Google Drive ต้องเปิดสิทธิ์ “ทุกคนที่มีลิงก์ดูได้” จากนั้นลากรูปด้านขวาเพื่อจัดใบหน้า</p>
+                <div class="url-status" id="avatarUrlStatus" role="status"></div>
+              </div>
+              <div class="avatar-canvas-wrap" id="avatarCanvasWrap">
+                <div class="avatar-stage" id="avatarStage">
+                  <img id="avatarEditorImage" alt="ตัวอย่าง Avatar">
+                  <span class="avatar-party-hat" id="avatarEditorHat" aria-hidden="true"></span>
+                </div>
+                <span class="avatar-drag-hint">ลากเพื่อขยับ</span>
+              </div>
+            </div>
+            <div class="avatar-controls">
+              <label class="field range-field">
+                <span>ซูมรูป <b id="avatarZoomValue">100%</b></span>
+                <input id="avatarZoom" type="range" min="1" max="3" step="0.01" value="1" />
+              </label>
+              <div class="field-grid two-columns">
+                <label class="field range-field"><span>ตำแหน่งแนวนอน</span><input id="avatarOffsetX" type="range" min="-50" max="50" step="1" value="0" /></label>
+                <label class="field range-field"><span>ตำแหน่งแนวตั้ง</span><input id="avatarOffsetY" type="range" min="-50" max="50" step="1" value="0" /></label>
+              </div>
+              <div class="toggle-card">
+                <div><b>หมวกวันเกิด</b><span>วางหมวกให้อัตโนมัติบน Avatar</span></div>
+                <label class="switch"><input id="avatarHatEnabled" type="checkbox" /><i></i></label>
+              </div>
+              <div class="avatar-actions">
+                <button class="quiet-btn" id="avatarCenterBtn" type="button">จัดกึ่งกลาง</button>
+                <button class="quiet-btn" id="avatarResetBtn" type="button">ใช้รูป Default</button>
+              </div>
+              <div class="avatar-error" id="avatarError" role="alert"></div>
+              <em data-error="birthday.avatarUrl"></em>
+            </div>
+          </section>
+          <section class="settings-section" data-panel="quiz">
+            <div class="section-heading">
+              <span>05</span>
+              <div>
+                <h2>Quiz</h2>
+                <p>สร้างคำถาม 5–25 ข้อ พร้อมกำหนดคำตอบที่ถูก</p>
+              </div>
+            </div>
+            <div class="conditional-note" id="quizDisabledNote" hidden>
+              <b>Quiz ถูกปิดอยู่</b>
+              <span>เปิด Quiz Section ที่หน้า General ก่อน จึงจะแก้ชุดคำถามได้</span>
+            </div>
+            <div id="quizBuilderContent">
+              <div class="quiz-builder-toolbar">
+                <div>
+                  <b>จำนวนคำถาม</b>
+                  <span>อย่างน้อย 5 และสูงสุด 25 ข้อ</span>
+                </div>
+                <div class="count-stepper">
+                  <button type="button" id="removeQuestionBtn" aria-label="ลดคำถาม">−</button>
+                  <input id="questionCount" type="number" min="5" max="25" inputmode="numeric" aria-label="จำนวนคำถาม" />
+                  <button type="button" id="addQuestionBtn" aria-label="เพิ่มคำถาม">+</button>
+                </div>
+              </div>
+              <em class="collection-error" data-error="quiz.questions"></em>
+              <div class="question-list" id="questionList"></div>
+              <button class="quiz-add-question" id="appendQuestionBtn" type="button">＋ เพิ่มคำถามใหม่</button>
+            </div>
+          </section>
+          <section class="settings-section" data-panel="gifts">
+            <div class="section-heading">
+              <span>06</span>
+              <div>
+                <h2>Gift Balls</h2>
+                <p>กำหนดลูกบอล 10–25 ลูก และของรางวัลภายในแต่ละลูก</p>
+              </div>
+            </div>
+            <div class="gift-builder-toolbar">
+              <div>
+                <b>จำนวนลูกบอลของขวัญ</b>
+                <span>หนึ่งลูกบอลต่อหนึ่งของรางวัล</span>
+              </div>
+              <div class="count-stepper">
+                <button type="button" id="removeGiftBtn" aria-label="ลดลูกบอล">−</button>
+                <input id="giftCount" type="number" min="10" max="25" inputmode="numeric" aria-label="จำนวนลูกบอล" />
+                <button type="button" id="addGiftBtn" aria-label="เพิ่มลูกบอล">+</button>
+              </div>
+            </div>
+            <em class="collection-error" data-error="giftBox.ballCount"></em>
+            <em class="collection-error" data-error="giftBox.gifts"></em>
+            <div class="gift-editor-list" id="giftEditorList"></div>
+            <button class="gift-add-button" id="appendGiftBtn" type="button">＋ เพิ่มลูกบอลและของรางวัล</button>
+          </section>
+          <section class="settings-section" data-panel="memories">
+            <div class="section-heading">
+              <span>07</span>
+              <div>
+                <h2>Memories</h2>
+                <p>เพิ่มรูปด้วย URL สูงสุด 10 รูป โดยไม่ใช้พื้นที่อัปโหลดใน Browser</p>
+              </div>
+            </div>
+            <div class="conditional-note" id="memoriesDisabledNote" hidden>
+              <b>Memories ถูกปิดอยู่</b>
+              <span>เปิด Memories Section ที่หน้า General ก่อน จึงจะแก้อัลบั้มได้</span>
+            </div>
+            <div id="memoryBuilderContent">
+              <div class="memory-copy-fields">
+                <div class="field-grid two-columns">
+                  <label class="field"><span>หัวข้อ Memories</span><input data-path="memories.title" maxlength="30"><small class="counter" data-counter="memories.title"></small><em data-error="memories.title"></em></label>
+                  <label class="field"><span>หัวข้อรอง</span><input data-path="memories.subtitle" maxlength="40"><small class="counter" data-counter="memories.subtitle"></small><em data-error="memories.subtitle"></em></label>
+                </div>
+                <label class="field"><span>ข้อความแนะนำ</span><textarea data-path="memories.intro" rows="3" maxlength="120"></textarea><small class="counter" data-counter="memories.intro"></small><em data-error="memories.intro"></em></label>
+                <label class="field"><span>ข้อความท้าย Memories</span><textarea data-path="memories.note" rows="2" maxlength="100"></textarea><small class="counter" data-counter="memories.note"></small><em data-error="memories.note"></em></label>
+              </div>
+              <div class="memory-builder-toolbar">
+                <div><b>รูปความทรงจำ</b><span>ลิงก์รูปตรงหรือ Google Drive Share Link • สูงสุด 10 รูป</span></div>
+                <div class="count-stepper">
+                  <button type="button" id="removeMemoryBtn" aria-label="ลดรูป">−</button>
+                  <input id="memoryCount" type="number" min="0" max="10" inputmode="numeric" aria-label="จำนวนรูป">
+                  <button type="button" id="addMemoryBtn" aria-label="เพิ่มรูป">+</button>
+                </div>
+              </div>
+              <div class="memory-url-note">Google Drive: ตั้งสิทธิ์เป็น “ทุกคนที่มีลิงก์ดูได้” แล้วนำ Share Link มาวาง ระบบจะแปลงลิงก์สำหรับแสดงรูปให้อัตโนมัติ</div>
+              <em class="collection-error" data-error="memories.items"></em>
+              <em class="collection-error" data-error="memories.filmItemIds"></em>
+              <div class="memory-editor-list" id="memoryEditorList"></div>
+              <button class="memory-add-button" id="appendMemoryBtn" type="button">＋ เพิ่มรูปความทรงจำ</button>
+            </div>
+          </section>
+          <section class="settings-section" data-panel="review">
+            <div class="section-heading">
+              <span>08</span>
+              <div><h2>Review</h2><p>ตรวจความพร้อมของ Experience ก่อนนำไปใช้งาน</p></div>
+            </div>
+            <div class="review-status" id="reviewStatus"></div>
+            <div class="review-grid" id="reviewGrid"></div>
+            <div class="review-block">
+              <h3>เส้นทางของ Experience</h3>
+              <div class="journey-preview" id="journeyPreview"></div>
+            </div>
+            <div class="review-block">
+              <h3>คืนค่าเฉพาะ Section</h3>
+              <p>ข้อมูลใน Section อื่นจะไม่ถูกเปลี่ยน</p>
+              <div class="section-reset-grid">
+                <button type="button" data-reset-section="general">General</button>
+                <button type="button" data-reset-section="cake">Cake</button>
+                <button type="button" data-reset-section="card">Card after Cake</button>
+                <button type="button" data-reset-section="avatar">Avatar</button>
+                <button type="button" data-reset-section="quiz">Quiz</button>
+                <button type="button" data-reset-section="gifts">Gifts</button>
+                <button type="button" data-reset-section="memories">Memories</button>
+              </div>
+            </div>
+          </section>
+        </form>
+      </section>
+
+      <aside class="preview-panel" id="previewPanel">
+        <div class="preview-toolbar">
+          <div>
+            <b>Live Preview</b><span id="previewStatus" role="status" aria-live="polite">กำลังโหลด...</span>
+          </div>
+          <div class="preview-controls">
+            <label>Scene
+              <select id="previewScene">
+                <option value="intro">Intro</option><option value="cake">Cake</option><option value="message">Card</option><option value="quiz">Quiz</option><option value="gift">Gift Box</option><option value="summary">Gift Summary</option><option value="final">Final</option><option value="memories">Memories</option>
+              </select>
+            </label>
+            <label>Device
+              <select id="deviceWidth">
+              <option value="360">360px</option>
+              <option value="375" selected>375px</option>
+              <option value="390">390px</option>
+              <option value="430">430px</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="device-stage">
+          <div class="device-frame" id="deviceFrame">
+            <iframe
+              id="previewFrame"
+              src="index.html"
+              title="Birthday Experience preview"
+            ></iframe>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <script src="default-config.js"></script>
+    <script src="config-validator.js"></script>
+    <script src="settings.js"></script>
+    <script type="module" src="auth-guard.js"></script>
+  </body>
+</html>

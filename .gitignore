@@ -8,3 +8,12 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Frontend build output
+node_modules/
+dist/
+
+# Local environment variables
+.env
+.env.*
+!.env.example
