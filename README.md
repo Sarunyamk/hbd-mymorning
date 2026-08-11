@@ -81,6 +81,40 @@ Add the production domain and its `/auth.html` URL before deployment. The creato
 `auth.html` to register, sign in, recover a password, and sign out. Recipients do not
 need an account to open a published HBD URL.
 
+## Deploy to GitHub Pages
+
+This repository is configured for the project site:
+
+```text
+https://sarunyamk.github.io/hbd-mymorning/
+```
+
+The Vite base path is applied only during `npm run build`, so local development keeps
+using `http://localhost:5173/`. The workflow at
+`.github/workflows/deploy-pages.yml` builds all three HTML entry points and deploys
+the `dist` directory whenever `main` is updated.
+
+Complete these one-time settings in GitHub:
+
+1. Go to **Settings → Secrets and variables → Actions**.
+2. Add repository secrets named `VITE_SUPABASE_URL` and
+   `VITE_SUPABASE_PUBLISHABLE_KEY` using the values from local `.env`.
+3. Go to **Settings → Pages → Build and deployment**.
+4. Select **GitHub Actions** as the Source.
+
+Complete these one-time settings in Supabase **Authentication → URL Configuration**:
+
+```text
+Site URL: https://sarunyamk.github.io/hbd-mymorning/
+
+Redirect URLs:
+http://localhost:5173/auth.html
+https://sarunyamk.github.io/hbd-mymorning/auth.html
+```
+
+After the feature branch is merged into `main`, follow the deployment in the GitHub
+**Actions** tab. You can also run the workflow manually with **Run workflow**.
+
 ## Git
 
 ```bash

@@ -10,16 +10,24 @@ function copyLegacyRuntime() {
     name: 'copy-legacy-runtime',
     closeBundle() {
       mkdirSync(outputRoot, { recursive: true });
-      ['default-config.js', 'config-validator.js', 'app.js', 'settings.js'].forEach(
-        (file) => copyFileSync(`${projectRoot}${file}`, `${outputRoot}${file}`),
+      [
+        'default-config.js',
+        'config-validator.js',
+        'app.js',
+        'settings.js',
+      ].forEach((file) =>
+        copyFileSync(`${projectRoot}${file}`, `${outputRoot}${file}`)
       );
-      cpSync(`${projectRoot}assets`, `${outputRoot}assets`, { recursive: true });
+      cpSync(`${projectRoot}assets`, `${outputRoot}assets`, {
+        recursive: true,
+      });
       cpSync(`${projectRoot}docs`, `${outputRoot}docs`, { recursive: true });
     },
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ command, isPreview }) => ({
+  base: command === 'build' || isPreview ? '/hbd-mymorning/' : '/',
   plugins: [copyLegacyRuntime()],
   build: {
     rollupOptions: {
@@ -30,4 +38,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
