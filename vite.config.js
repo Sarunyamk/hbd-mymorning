@@ -36,6 +36,7 @@ export default defineConfig(({ command, isPreview }) => ({
         settings: fileURLToPath(new URL('./settings.html', import.meta.url)),
         auth: fileURLToPath(new URL('./auth.html', import.meta.url)),
         dashboard: fileURLToPath(new URL('./dashboard.html', import.meta.url)),
+        admin: fileURLToPath(new URL('./admin.html', import.meta.url)),
       },
     },
   },

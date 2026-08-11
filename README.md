@@ -81,6 +81,45 @@ Add the production domain and its `/auth.html` URL before deployment. The creato
 `auth.html` to register, sign in, recover a password, and sign out. Recipients do not
 need an account to open a published HBD URL.
 
+## Admin roles and user management
+
+Run [`supabase/migrations/20260811010000_admin_roles.sql`](supabase/migrations/20260811010000_admin_roles.sql)
+after the Phase 10 migration. It creates `profiles`, makes every new registration a
+normal `user`, blocks inactive accounts in RLS, adds admin-only summary RPCs, and
+hides an inactive creator's Public HBD pages.
+
+Promote the first admin once in the Supabase SQL Editor. Replace the email below with
+the account that should own the Admin dashboard:
+
+```sql
+insert into public.profiles (id, role, is_active, created_at)
+select id, 'admin', true, created_at
+from auth.users
+where email = 'YOUR_ADMIN_EMAIL'
+on conflict (id) do update
+set role = 'admin', is_active = true;
+```
+
+User deletion and Auth banning require server-side Admin APIs, so deploy the included
+Edge Function:
+
+```bash
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
+supabase functions deploy admin-users --no-verify-jwt
+```
+
+`verify_jwt` is disabled at the gateway because the function verifies the caller's
+real user access token itself, then checks the protected `profiles.role` again before
+using the server-side secret. Supabase provides the server credentials to deployed
+functions; never add `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` to `.env`,
+GitHub Secrets used by Vite, or frontend JavaScript.
+
+After promotion, log out and in again. The Dashboard will show **Admin**, which opens
+`admin.html`. Admin can view user and Experience metadata, deactivate/reactivate an
+account, or delete it. Deleting an Auth user cascades through `owner_id` and removes
+all of that user's `experiences` and `profiles` rows.
+
 ## Deploy to GitHub Pages
 
 This repository is configured for the project site:

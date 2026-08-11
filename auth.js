@@ -232,6 +232,8 @@ async function initializeAuth() {
   setView('login');
   if (new URLSearchParams(location.search).has('confirmed')) {
     setMessage('ยืนยันอีเมลเรียบร้อยแล้ว กรุณาเข้าสู่ระบบ', 'success');
+  } else if (new URLSearchParams(location.search).has('disabled')) {
+    setMessage('บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ', 'error');
   }
 }
 

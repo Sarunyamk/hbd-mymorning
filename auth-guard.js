@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from './supabase-client.js';
+import { getMyProfile } from './account-service.js';
 
 function revealPage() {
   document.documentElement.classList.remove('auth-checking');
@@ -33,6 +34,18 @@ async function guardProtectedPage() {
 
   const email = document.getElementById('accountEmail');
   if (email) email.textContent = data.session.user.email || 'Creator';
+  try {
+    const profile = await getMyProfile(data.session.user.id);
+    if (!profile.is_active) {
+      await supabase.auth.signOut();
+      location.replace('auth.html?disabled=1');
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('hbd:auth-ready', { detail: { user: data.session.user, profile } }));
+  } catch (profileError) {
+    console.error('Profile check error:', profileError);
+    showConfigurationWarning();
+  }
   revealPage();
 }
 

@@ -12,12 +12,13 @@
       .publish-actions a,.publish-actions button{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:9px 6px;background:rgba(255,255,255,.04);color:#dffbed;text-align:center;text-decoration:none;font-size:11px;cursor:pointer}
       .publish-actions .publish{grid-column:1/-1;border:0;background:linear-gradient(135deg,#a9f2d6,#d4c4ff);color:#1b2824;font-weight:900}
       .publish-actions button:disabled{opacity:.45;cursor:not-allowed}
+      #adminLink{border:1px solid rgba(255,159,200,.35);border-radius:10px;padding:8px 10px;color:#ffd0e2;text-decoration:none;font-size:11px;font-weight:800}
     </style>
   </head>
   <body>
     <header class="dashboard-header">
       <a class="brand" href="dashboard.html"><span>🎂</span> HBD My Love</a>
-      <div class="account"><span id="accountEmail">Creator</span><button id="logoutBtn" type="button">Logout</button></div>
+      <div class="account"><a id="adminLink" href="admin.html" hidden>Admin</a><span id="accountEmail">Creator</span><button id="logoutBtn" type="button">Logout</button></div>
     </header>
     <main>
       <section class="hero">

@@ -185,4 +185,7 @@ grid.addEventListener('click', async (event) => {
 
 window.addEventListener('online', () => refresh());
 window.addEventListener('offline', () => { setStatus('Offline — การแก้ไขจะเก็บใน Browser', 'offline'); });
+window.addEventListener('hbd:auth-ready', (event) => {
+  if (event.detail?.profile?.role === 'admin') document.getElementById('adminLink').hidden = false;
+});
 refresh();
