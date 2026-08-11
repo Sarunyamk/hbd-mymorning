@@ -301,6 +301,20 @@ Mint Birthday       Published   [Edit] [Open] [Unpublish]
 - ผู้รับเปิดหน้า HBD ได้โดยไม่ต้อง Login
 - แสดงหน้า Not Found/Unpublished เมื่อ ID ไม่ถูกต้องหรือถูกยกเลิกเผยแพร่
 
+การ Publish ทำจากหน้า Dashboard ระบบจะตรวจ Validation ของ Cloud Draft ก่อน แล้ว
+สร้าง Published Snapshot ที่ไม่เปลี่ยนตาม Draft จนกว่าจะกด **Republish** หากกด
+**Unpublish** ลิงก์เดิมจะเปิดไม่ได้ชั่วคราว และเมื่อ Publish ใหม่จะกลับมาใช้
+`public_id` เดิม
+
+Public URL ใช้รูปแบบ:
+
+```text
+https://sarunyamk.github.io/hbd-mymorning/?id=<public-id>
+```
+
+หน้า Public เรียกเฉพาะ RPC `get_published_experience` ผู้รับไม่ต้อง Login และไม่มี
+สิทธิ์อ่านตาราง `experiences` โดยตรง ส่วน Copy Link และ QR Code จะเพิ่มใน Phase 13
+
 ตัวอย่าง Public URL:
 
 ```text

@@ -39,7 +39,7 @@ export async function getCurrentUser() {
 export async function listExperiences() {
   const { data, error } = await requireClient()
     .from('experiences')
-    .select('id,title,status,schema_version,created_at,updated_at,published_at')
+    .select('id,title,status,public_id,schema_version,created_at,updated_at,published_at')
     .order('updated_at', { ascending: false });
   if (error) throw error;
   writeExperienceCache(data || []);
@@ -49,7 +49,7 @@ export async function listExperiences() {
 export async function getExperience(id) {
   const { data, error } = await requireClient()
     .from('experiences')
-    .select('id,title,status,draft_config,schema_version,created_at,updated_at,published_at')
+    .select('id,title,status,public_id,draft_config,schema_version,created_at,updated_at,published_at')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -68,7 +68,7 @@ export async function createExperience(config, title) {
   const { data, error } = await requireClient()
     .from('experiences')
     .insert(payload)
-    .select('id,title,status,draft_config,schema_version,created_at,updated_at,published_at')
+    .select('id,title,status,public_id,draft_config,schema_version,created_at,updated_at,published_at')
     .single();
   if (error) throw error;
   return data;
@@ -100,7 +100,7 @@ export async function renameExperience(id, title) {
     .from('experiences')
     .update({ title: normalizeTitle(title) })
     .eq('id', id)
-    .select('id,title,status,schema_version,created_at,updated_at,published_at')
+    .select('id,title,status,public_id,schema_version,created_at,updated_at,published_at')
     .single();
   if (error) throw error;
   return data;
@@ -116,7 +116,7 @@ export async function setExperienceArchived(id, archived = true) {
     .from('experiences')
     .update({ status: archived ? 'archived' : 'draft' })
     .eq('id', id)
-    .select('id,title,status,schema_version,created_at,updated_at,published_at')
+    .select('id,title,status,public_id,schema_version,created_at,updated_at,published_at')
     .single();
   if (error) throw error;
   return data;
@@ -125,4 +125,33 @@ export async function setExperienceArchived(id, archived = true) {
 export async function deleteExperience(id) {
   const { error } = await requireClient().from('experiences').delete().eq('id', id);
   if (error) throw error;
+}
+
+export async function publishExperience(id) {
+  const source = await getExperience(id);
+  const publicId = source.public_id || crypto.randomUUID();
+  const { data, error } = await requireClient()
+    .from('experiences')
+    .update({
+      published_config: source.draft_config,
+      public_id: publicId,
+      status: 'published',
+      published_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select('id,title,status,public_id,schema_version,created_at,updated_at,published_at')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function unpublishExperience(id) {
+  const { data, error } = await requireClient()
+    .from('experiences')
+    .update({ status: 'draft', published_at: null })
+    .eq('id', id)
+    .select('id,title,status,public_id,schema_version,created_at,updated_at,published_at')
+    .single();
+  if (error) throw error;
+  return data;
 }

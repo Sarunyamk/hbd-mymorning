@@ -2,10 +2,13 @@ import {
   createExperience,
   deleteExperience,
   duplicateExperience,
+  getExperience,
   listExperiences,
+  publishExperience,
   readExperienceCache,
   renameExperience,
   setExperienceArchived,
+  unpublishExperience,
 } from './experience-service.js';
 
 const grid = document.getElementById('experienceGrid');
@@ -36,6 +39,12 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
+function publicExperienceUrl(publicId) {
+  const url = new URL('./', location.href);
+  url.searchParams.set('id', publicId);
+  return url.href;
+}
+
 function visibleExperiences() {
   if (filter === 'archived') return experiences.filter((item) => item.status === 'archived');
   if (filter === 'active') return experiences.filter((item) => item.status !== 'archived');
@@ -58,7 +67,10 @@ function render() {
     card.dataset.id = item.id;
     const archived = item.status === 'archived';
     const displayStatus = archived ? 'Archived' : item.status === 'published' ? 'Published' : 'Draft';
-    card.innerHTML = `<div class="card-top"><span class="status-pill ${item.status}">${displayStatus}</span><span class="status-pill">Schema v${item.schema_version}</span></div><h2></h2><time datetime="${item.updated_at}">แก้ไข ${formatDate(item.updated_at)}</time><div class="card-actions"><a class="edit" href="settings.html?experience=${encodeURIComponent(item.id)}">แก้ไข Settings</a><button data-action="rename">Rename</button><button data-action="duplicate">Duplicate</button><button data-action="archive">${archived ? 'Restore' : 'Archive'}</button><button class="danger" data-action="delete">Delete</button></div>`;
+    const publishActions = archived ? '' : item.status === 'published'
+      ? `<div class="publish-actions"><a href="${publicExperienceUrl(item.public_id)}" target="_blank" rel="noopener">Open HBD ↗</a><button data-action="republish">Republish</button><button data-action="unpublish">Unpublish</button></div>`
+      : '<div class="publish-actions"><button class="publish" data-action="publish">Publish HBD ✨</button></div>';
+    card.innerHTML = `<div class="card-top"><span class="status-pill ${item.status}">${displayStatus}</span><span class="status-pill">Schema v${item.schema_version}</span></div><h2></h2><time datetime="${item.updated_at}">แก้ไข ${formatDate(item.updated_at)}</time>${publishActions}<div class="card-actions"><a class="edit" href="settings.html?experience=${encodeURIComponent(item.id)}">แก้ไข Settings</a><button data-action="rename">Rename</button><button data-action="duplicate">Duplicate</button><button data-action="archive">${archived ? 'Restore' : 'Archive'}</button><button class="danger" data-action="delete">Delete</button></div>`;
     card.querySelector('h2').textContent = item.title;
     grid.appendChild(card);
   });
@@ -148,12 +160,22 @@ grid.addEventListener('click', async (event) => {
   }
   if (action === 'delete' && !confirm(`ลบ “${item.title}” ถาวร? การกระทำนี้ย้อนกลับไม่ได้`)) return;
   if (action === 'archive' && !confirm(`${item.status === 'archived' ? 'นำกลับ' : 'เก็บ'} “${item.title}” ${item.status === 'archived' ? 'มาเป็น Draft' : 'ไว้ใน Archive'}?`)) return;
+  if (action === 'publish' && !confirm(`Publish “${item.title}” และสร้างลิงก์สำหรับผู้รับ?`)) return;
+  if (action === 'republish' && !confirm(`Republish “${item.title}” ด้วย Draft ล่าสุด? ลิงก์เดิมจะเห็นข้อมูลชุดใหม่`)) return;
+  if (action === 'unpublish' && !confirm(`Unpublish “${item.title}”? ผู้รับจะเปิดลิงก์ไม่ได้จนกว่าจะ Publish อีกครั้ง`)) return;
   button.disabled = true;
   showMessage();
   try {
     if (action === 'duplicate') await duplicateExperience(item.id);
     if (action === 'archive') await setExperienceArchived(item.id, item.status !== 'archived');
     if (action === 'delete') await deleteExperience(item.id);
+    if (action === 'publish' || action === 'republish') {
+      const source = await getExperience(item.id);
+      const validation = window.validateExperienceConfig(source.draft_config);
+      if (!validation.valid) throw new Error(`ยัง Publish ไม่ได้: กรุณาแก้ข้อมูลใน Settings อีก ${validation.errors.length} จุด`);
+      await publishExperience(item.id);
+    }
+    if (action === 'unpublish') await unpublishExperience(item.id);
     await refresh({ allowCache: false });
   } catch (error) {
     console.error('Dashboard action error:', error);

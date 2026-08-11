@@ -6,7 +6,13 @@
     <title>My Birthday Experiences</title>
     <script>document.documentElement.classList.add('auth-checking');</script>
     <link rel="stylesheet" href="dashboard.css" />
-    <style>.status-pill.published{background:#183e34;color:#9ce5c9}</style>
+    <style>
+      .status-pill.published{background:#183e34;color:#9ce5c9}
+      .publish-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:20px;padding:10px;border:1px solid rgba(143,224,189,.2);border-radius:14px;background:rgba(74,190,139,.055)}
+      .publish-actions a,.publish-actions button{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:9px 6px;background:rgba(255,255,255,.04);color:#dffbed;text-align:center;text-decoration:none;font-size:11px;cursor:pointer}
+      .publish-actions .publish{grid-column:1/-1;border:0;background:linear-gradient(135deg,#a9f2d6,#d4c4ff);color:#1b2824;font-weight:900}
+      .publish-actions button:disabled{opacity:.45;cursor:not-allowed}
+    </style>
   </head>
   <body>
     <header class="dashboard-header">
@@ -33,6 +39,7 @@
       </form>
     </dialog>
     <script src="default-config.js"></script>
+    <script src="config-validator.js"></script>
     <script type="module" src="dashboard.js"></script>
     <script type="module" src="auth-guard.js"></script>
   </body>

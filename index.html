@@ -7,9 +7,19 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>HBD My Love — Interactive Prototype</title>
+    <script>if(new URLSearchParams(location.search).has('id'))document.documentElement.classList.add('public-loading');</script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="public-state" id="publicState" role="status" aria-live="polite">
+      <div class="public-state-card">
+        <span id="publicStateIcon">🎂</span>
+        <p>Birthday Experience</p>
+        <h1 id="publicStateTitle">กำลังเตรียมของขวัญให้คุณ…</h1>
+        <p id="publicStateMessage">กำลังโหลดข้อมูลจาก Cloud</p>
+        <button id="publicRetryBtn" type="button" hidden>ลองอีกครั้ง</button>
+      </div>
+    </div>
     <div id="app">
       <aside class="sidebar">
         <div class="brand">
@@ -2275,5 +2285,6 @@ Build incrementally, but keep the complete end-to-end flow working.</pre
     <script src="default-config.js"></script>
     <script src="config-validator.js"></script>
     <script src="app.js"></script>
+    <script type="module" src="public-experience.js"></script>
   </body>
 </html>
