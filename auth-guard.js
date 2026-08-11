@@ -13,7 +13,12 @@ function showConfigurationWarning() {
   document.body.prepend(warning);
 }
 
-async function guardSettings() {
+function currentProtectedDestination() {
+  const page = location.pathname.split('/').pop() || 'dashboard.html';
+  return `${page}${location.search}${location.hash}`;
+}
+
+async function guardProtectedPage() {
   if (!isSupabaseConfigured) {
     revealPage();
     showConfigurationWarning();
@@ -22,7 +27,7 @@ async function guardSettings() {
 
   const { data, error } = await supabase.auth.getSession();
   if (error || !data.session?.user) {
-    location.replace('auth.html?next=settings.html');
+    location.replace(`auth.html?next=${encodeURIComponent(currentProtectedDestination())}`);
     return;
   }
 
@@ -36,7 +41,7 @@ document.getElementById('logoutBtn')?.addEventListener('click', async () => {
   location.replace('auth.html');
 });
 
-guardSettings().catch((error) => {
+guardProtectedPage().catch((error) => {
   console.error('Auth guard error:', error);
   revealPage();
   showConfigurationWarning();

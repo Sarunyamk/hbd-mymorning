@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Birthday Experiences</title>
+    <script>document.documentElement.classList.add('auth-checking');</script>
+    <link rel="stylesheet" href="dashboard.css" />
+    <style>.status-pill.published{background:#183e34;color:#9ce5c9}</style>
+  </head>
+  <body>
+    <header class="dashboard-header">
+      <a class="brand" href="dashboard.html"><span>🎂</span> HBD My Love</a>
+      <div class="account"><span id="accountEmail">Creator</span><button id="logoutBtn" type="button">Logout</button></div>
+    </header>
+    <main>
+      <section class="hero">
+        <div><p class="eyebrow">Creator dashboard</p><h1>My Birthday Experiences</h1><p>สร้างและจัดการ Birthday Experience ได้หลายงานในบัญชีเดียว</p></div>
+        <button class="primary" id="createBtn" type="button">＋ สร้างงานใหม่</button>
+      </section>
+      <div class="status-row">
+        <div id="cloudStatus" class="cloud-status" role="status" aria-live="polite">กำลังเชื่อมต่อ Cloud…</div>
+        <div class="filters" role="group" aria-label="กรองรายการ"><button class="active" data-filter="active">ใช้งานอยู่</button><button data-filter="archived">เก็บถาวร</button><button data-filter="all">ทั้งหมด</button></div>
+      </div>
+      <section id="dashboardMessage" class="dashboard-message" hidden></section>
+      <section id="experienceGrid" class="experience-grid" aria-live="polite"></section>
+    </main>
+    <dialog id="nameDialog">
+      <form method="dialog" id="nameForm">
+        <p class="eyebrow" id="dialogEyebrow">New experience</p><h2 id="dialogTitle">ตั้งชื่องาน</h2>
+        <label><span>ชื่อ Birthday Experience</span><input id="experienceName" maxlength="80" required /></label>
+        <div class="dialog-actions"><button value="cancel" class="secondary">ยกเลิก</button><button value="confirm" id="nameConfirm" class="primary">บันทึก</button></div>
+      </form>
+    </dialog>
+    <script src="default-config.js"></script>
+    <script type="module" src="dashboard.js"></script>
+    <script type="module" src="auth-guard.js"></script>
+  </body>
+</html>

@@ -66,8 +66,17 @@ function setSubmitting(form, submitting) {
 
 function redirectAfterLogin() {
   const requested = new URLSearchParams(location.search).get('next');
-  const allowed = new Set(['settings.html', './settings.html', '/settings.html']);
-  location.replace(allowed.has(requested) ? requested : 'settings.html');
+  let destination = 'dashboard.html';
+  if (requested) {
+    try {
+      const parsed = new URL(requested, location.href);
+      const page = parsed.pathname.split('/').pop();
+      if (parsed.origin === location.origin && ['dashboard.html', 'settings.html'].includes(page)) {
+        destination = `${page}${parsed.search}${parsed.hash}`;
+      }
+    } catch { /* Ignore unsafe or malformed redirects. */ }
+  }
+  location.replace(destination);
 }
 
 function recoveryRedirectUrl() {
@@ -178,7 +187,7 @@ elements.recovery.addEventListener('submit', async (event) => {
     return;
   }
   elements.recovery.reset();
-  setMessage('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว กำลังเปิด HBD Builder…', 'success');
+  setMessage('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว กำลังเปิด Dashboard…', 'success');
   setTimeout(redirectAfterLogin, 900);
 });
 

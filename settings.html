@@ -12,9 +12,10 @@
   </head>
   <body>
     <header class="settings-header">
-      <a class="back-link" href="index.html">← Experience</a>
-      <div><b>HBD Builder</b><span id="saveStatus" role="status" aria-live="polite">พร้อมแก้ไข</span></div>
+      <a class="back-link" href="dashboard.html">← Dashboard</a>
+      <div><b>HBD Builder</b><span id="saveStatus" role="status" aria-live="polite">พร้อมแก้ไข</span><span id="cloudSaveStatus" role="status" aria-live="polite">กำลังโหลด Cloud Draft…</span></div>
       <div class="header-actions">
+        <button class="quiet-btn cloud-save-btn" id="saveCloudBtn" type="button">Save Draft</button>
         <button class="quiet-btn" id="importBtn">Import</button>
         <button class="quiet-btn" id="exportBtn">Export</button>
         <button class="quiet-btn danger" id="resetBtn">Default</button>
@@ -31,6 +32,11 @@
         hidden
       />
     </header>
+
+    <div class="cloud-conflict" id="cloudConflict" role="alert" hidden>
+      <div><b>Cloud Draft ถูกแก้จากอีกหน้าต่าง</b><span>เพื่อป้องกันข้อมูลสูญหาย ระบบจึงยังไม่เขียนทับ</span></div>
+      <button id="reloadCloudBtn" type="button">โหลดข้อมูลจาก Cloud</button>
+    </div>
 
     <main class="builder-layout">
       <section class="editor-panel">
@@ -443,5 +449,6 @@
     <script src="config-validator.js"></script>
     <script src="settings.js"></script>
     <script type="module" src="auth-guard.js"></script>
+    <script type="module" src="cloud-draft.js"></script>
   </body>
 </html>

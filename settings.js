@@ -1,4 +1,5 @@
-const SETTINGS_STORAGE_KEY='hbd-experience-draft-v1';
+const EXPERIENCE_ID=new URLSearchParams(location.search).get('experience')||'';
+const SETTINGS_STORAGE_KEY=EXPERIENCE_ID?`hbd-experience-draft-v1:${EXPERIENCE_ID}`:'hbd-experience-draft-v1';
 const defaults=window.DEFAULT_EXPERIENCE_CONFIG;
 const form=document.getElementById('settingsForm');
 const previewFrame=document.getElementById('previewFrame');
@@ -408,10 +409,12 @@ function scheduleSaveAndPreview(){
   saveTimer=setTimeout(saveDraft,450);
   previewTimer=setTimeout(sendPreview,650);
 }
-function saveDraft(){
+function saveDraft(options){
   try{
     localStorage.setItem(SETTINGS_STORAGE_KEY,JSON.stringify(draftConfig));
-    const status=document.getElementById('saveStatus');status.textContent=`บันทึกแล้ว ${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`;status.classList.remove('save-error');status.classList.add('validation-ok');return true;
+    const status=document.getElementById('saveStatus');status.textContent=`บันทึกใน Browser แล้ว ${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`;status.classList.remove('save-error');status.classList.add('validation-ok');
+    if(options?.notify!==false)window.dispatchEvent(new CustomEvent('hbd:draft-changed',{detail:{experienceId:EXPERIENCE_ID}}));
+    return true;
   }catch(error){
     const status=document.getElementById('saveStatus');status.classList.remove('validation-ok');status.classList.add('save-error');
     status.textContent=error?.name==='QuotaExceededError'?'พื้นที่ Browser เต็ม — Export แล้วลดข้อมูลรูป':'บันทึกไม่สำเร็จ — ลอง Export สำรอง';console.error('Draft save error:',error);return false;
@@ -662,6 +665,18 @@ document.getElementById('importFile').addEventListener('change',async event=>{
   event.target.value='';
 });
 window.addEventListener('beforeunload',saveDraft);
+
+window.HBDSettings={
+  experienceId:EXPERIENCE_ID,
+  getConfig:()=>clone(draftConfig),
+  replaceConfig(config){
+    draftConfig=merge(defaults,migrateConfig(config));
+    renderForm();saveDraft({notify:false});sendPreview();
+    return clone(draftConfig);
+  },
+  saveLocal:saveDraft,
+  validate:()=>validateExperienceConfig(draftConfig),
+};
 
 renderForm();
 openSettingsTab(location.hash.slice(1)||'general',{updateHash:false});

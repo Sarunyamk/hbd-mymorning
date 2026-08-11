@@ -91,7 +91,7 @@ https://sarunyamk.github.io/hbd-mymorning/
 
 The Vite base path is applied only during `npm run build`, so local development keeps
 using `http://localhost:5173/`. The workflow at
-`.github/workflows/deploy-pages.yml` builds all three HTML entry points and deploys
+`.github/workflows/deploy-pages.yml` builds all four HTML entry points and deploys
 the `dist` directory whenever `main` is updated.
 
 Complete these one-time settings in GitHub:
@@ -258,6 +258,24 @@ Final
 - เปิดกลับมาแก้ไข Draft เดิมได้จากอุปกรณ์อื่นหลัง Login
 - รองรับ Rename, Duplicate, Archive และ Delete
 - แสดงสถานะ Draft/Published และวันที่แก้ไขล่าสุด
+
+Phase 11 ใช้งานผ่าน `dashboard.html` หลัง Login โดยตรง แต่ละงานจะเปิด Settings
+ด้วย `settings.html?experience=<experience-id>` เพื่อแยก Local fallback และ Cloud
+Draft ของแต่ละงานออกจากกัน การแก้ไขจะเก็บลง Browser ก่อนเสมอ แล้ว Auto-save ไป
+Supabase หลังหยุดพิมพ์ พร้อมปุ่ม **Save Draft** สำหรับบันทึกทันที
+
+หาก Offline ผู้สร้างยังแก้ Draft ที่เคยเปิดบนอุปกรณ์นั้นได้ ข้อมูลจะรอ Sync เมื่อ
+กลับมา Online ส่วน Rename, Duplicate, Archive และ Delete ต้องเชื่อมต่อ Cloud
+ถ้ามีอีกแท็บแก้ Cloud Draft เดียวกันก่อน ระบบจะหยุดการเขียนทับและให้เลือกโหลด
+เวอร์ชันล่าสุดจาก Cloud
+
+เส้นทางหลักของ Creator:
+
+```text
+auth.html → dashboard.html → settings.html?experience=<uuid>
+```
+
+Phase 11 ยังไม่มี Publish, Public URL และ QR Code ซึ่งจะทำใน Phase 12–13
 - ป้องกันการเขียนทับข้อมูลเมื่อเปิดแก้จากหลาย Tab เท่าที่จำเป็น
 - URL รูป Avatar/Memories ยังคงอยู่ใน Config โดยไม่คัดลอกหรืออัปโหลดไฟล์
 
