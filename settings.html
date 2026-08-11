@@ -7,6 +7,7 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>HBD Experience Settings</title>
+    <script>document.documentElement.classList.add('auth-checking');</script>
     <link rel="stylesheet" href="settings.css" />
   </head>
   <body>
@@ -18,6 +19,10 @@
         <button class="quiet-btn" id="exportBtn">Export</button>
         <button class="quiet-btn danger" id="resetBtn">Default</button>
         <button class="preview-btn" id="previewBtn">Preview ✨</button>
+      </div>
+      <div class="settings-account">
+        <span id="accountEmail">Creator</span>
+        <button class="quiet-btn" id="logoutBtn" type="button">Logout</button>
       </div>
       <input
         type="file"
@@ -437,5 +442,6 @@
     <script src="default-config.js"></script>
     <script src="config-validator.js"></script>
     <script src="settings.js"></script>
+    <script type="module" src="auth-guard.js"></script>
   </body>
 </html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+    <title>เข้าสู่ระบบ — HBD Builder</title>
+    <link rel="stylesheet" href="auth.css" />
+    <style>
+      [hidden] { display: none !important; }
+      html, body { overflow-x: hidden; }
+      .auth-shell, .auth-story, .auth-panel, .auth-card, .story-copy {
+        min-width: 0;
+        max-width: 100%;
+      }
+      .story-copy h1 { overflow-wrap: anywhere; }
+      @media (max-width: 850px) {
+        .auth-shell { grid-template-columns: minmax(0, 1fr); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="auth-shell">
+      <section class="auth-story" aria-label="HBD Builder introduction">
+        <a class="brand" href="index.html"><span>🎂</span> HBD My Love</a>
+        <div class="story-copy">
+          <p class="eyebrow">Create something personal</p>
+          <h1>เก็บทุก Birthday<br />Experience ไว้ในที่เดียว</h1>
+          <p>
+            เข้าสู่ระบบเพื่อสร้างและจัดการ HBD ของคุณ ส่วนคนที่ได้รับลิงก์
+            สามารถเปิดดูได้โดยไม่ต้องสมัครสมาชิก
+          </p>
+        </div>
+        <div class="story-orbs" aria-hidden="true"><i></i><i></i><i></i></div>
+      </section>
+
+      <section class="auth-panel">
+        <div class="auth-card">
+          <div id="authLoading" class="auth-loading" role="status">
+            <span class="spinner"></span> กำลังตรวจสอบบัญชี…
+          </div>
+
+          <div id="authConfigError" class="auth-config-error" hidden>
+            <span>⚠️</span>
+            <h2>ยังเชื่อมต่อ Supabase ไม่ได้</h2>
+            <p>
+              ตรวจสอบ <code>VITE_SUPABASE_URL</code> และ
+              <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> ในไฟล์
+              <code>.env</code> แล้วเปิดผ่าน <code>npm run dev</code>
+            </p>
+          </div>
+
+          <div id="authForms" hidden>
+            <header class="auth-heading">
+              <p class="eyebrow">Creator account</p>
+              <h2 id="authTitle">ยินดีต้อนรับกลับมา</h2>
+              <p id="authSubtitle">เข้าสู่ระบบเพื่อแก้ไข Birthday Experience ของคุณ</p>
+            </header>
+
+            <div class="auth-tabs" id="authTabs" role="tablist" aria-label="Authentication">
+              <button type="button" class="active" data-auth-view="login" role="tab">เข้าสู่ระบบ</button>
+              <button type="button" data-auth-view="register" role="tab">สมัครสมาชิก</button>
+            </div>
+
+            <div id="authMessage" class="auth-message" role="status" aria-live="polite" hidden></div>
+
+            <form id="loginForm" class="auth-form" novalidate>
+              <label>
+                <span>อีเมล</span>
+                <input id="loginEmail" type="email" autocomplete="email" maxlength="254" required />
+              </label>
+              <label>
+                <span>รหัสผ่าน</span>
+                <input id="loginPassword" type="password" autocomplete="current-password" minlength="8" maxlength="72" required />
+              </label>
+              <button class="primary-btn" type="submit">เข้าสู่ระบบ ✨</button>
+              <button class="text-btn" id="forgotLink" type="button">ลืมรหัสผ่าน?</button>
+            </form>
+
+            <form id="registerForm" class="auth-form" novalidate hidden>
+              <label>
+                <span>อีเมล</span>
+                <input id="registerEmail" type="email" autocomplete="email" maxlength="254" required />
+              </label>
+              <label>
+                <span>รหัสผ่าน</span>
+                <input id="registerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required />
+                <small>อย่างน้อย 8 ตัวอักษร</small>
+              </label>
+              <label>
+                <span>ยืนยันรหัสผ่าน</span>
+                <input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="72" required />
+              </label>
+              <button class="primary-btn" type="submit">สร้างบัญชี 🎉</button>
+            </form>
+
+            <form id="forgotForm" class="auth-form" novalidate hidden>
+              <label>
+                <span>อีเมลที่ใช้สมัคร</span>
+                <input id="forgotEmail" type="email" autocomplete="email" maxlength="254" required />
+              </label>
+              <button class="primary-btn" type="submit">ส่งลิงก์ตั้งรหัสผ่านใหม่</button>
+              <button class="text-btn" data-back-login type="button">← กลับไปเข้าสู่ระบบ</button>
+            </form>
+
+            <form id="recoveryForm" class="auth-form" novalidate hidden>
+              <label>
+                <span>รหัสผ่านใหม่</span>
+                <input id="recoveryPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required />
+              </label>
+              <label>
+                <span>ยืนยันรหัสผ่านใหม่</span>
+                <input id="recoveryPasswordConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="72" required />
+              </label>
+              <button class="primary-btn" type="submit">บันทึกรหัสผ่านใหม่</button>
+            </form>
+          </div>
+
+          <div id="signedInPanel" class="signed-in-panel" hidden>
+            <span class="account-icon">✓</span>
+            <p class="eyebrow">Signed in</p>
+            <h2>บัญชีพร้อมใช้งาน</h2>
+            <p id="signedInEmail"></p>
+            <a class="primary-btn link-btn" href="settings.html">ไปที่ HBD Builder ✨</a>
+            <button class="text-btn" id="authLogoutBtn" type="button">ออกจากระบบ</button>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="auth.js"></script>
+  </body>
+</html>

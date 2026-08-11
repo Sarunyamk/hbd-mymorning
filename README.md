@@ -30,6 +30,57 @@ Then open:
 http://localhost:5500
 ```
 
+### Vite (required for Supabase/Auth)
+
+```bash
+npm install
+npm run dev
+```
+
+Then open the URL shown by Vite, normally:
+
+```text
+http://localhost:5173
+```
+
+Vite is required from Phase 10 onward because it loads the Supabase variables from
+`.env`. Opening the HTML files with `file://` does not load those variables.
+
+## Phase 10 Supabase setup
+
+Create `.env` from `.env.example` and provide only the browser-safe values from the
+Supabase Connect dialog:
+
+```env
+VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_KEY
+```
+
+Never put a Secret Key, Service Role Key, database password, or connection string in
+the frontend environment file.
+
+In Supabase **Integrations → Data API**, use these settings:
+
+- Enable Data API: on
+- Automatically expose new tables: off
+- Enable automatic RLS: on
+
+Run [`supabase/migrations/20260811000000_phase10_foundation.sql`](supabase/migrations/20260811000000_phase10_foundation.sql)
+once in the Supabase SQL Editor. It creates the `experiences` table, owner-only RLS
+policies, explicit grants, update trigger, and the public read RPC used by a published
+HBD URL.
+
+In Supabase **Authentication → URL Configuration**, configure:
+
+```text
+Site URL: http://localhost:5173
+Redirect URL: http://localhost:5173/auth.html
+```
+
+Add the production domain and its `/auth.html` URL before deployment. The creator uses
+`auth.html` to register, sign in, recover a password, and sign out. Recipients do not
+need an account to open a published HBD URL.
+
 ## Git
 
 ```bash
@@ -46,8 +97,8 @@ git push -u origin main
 - Microphone blow detection uses `navigator.mediaDevices.getUserMedia`.
 - Browsers normally require HTTPS for microphone access, except `localhost`.
 - Audio starts only after a user interaction because browsers block autoplay.
-- No backend is required.
-- Quiz questions and gift definitions are currently inside `app.js`.
+- No custom backend server or Edge Function is required; Phase 10 uses Supabase directly.
+- Experience content is rendered from the shared configuration schema.
 
 Step ถัดไป
 Phase 5 — Avatar Editor
@@ -130,98 +181,109 @@ Gift Box
 Memories
 Final
 
-Phase 10 — Authentication และ Database
-แนะนำใช้ Supabase:
-Supabase Auth
-ระบุว่าใครคือ User A/User B
-PostgreSQL
-เก็บ:
-Configuration
-Draft
-Published snapshot
-Owner ID
-Share token
-Status
-Supabase Storage
-เก็บ:
-รูปต้นฉบับ
-Avatar ใส่หมวก
-Memory images
-Gift icons
-Row Level Security
-User A เห็นเฉพาะข้อมูลของ User A
-User B เห็นเฉพาะข้อมูลของ User B
-โครงสร้างตาราง:
-users
-└── experiences
-└── assets
-Phase 11 — Draft, Publish และ Share
-สถานะ Experience:
-draft
-published
-archived
-ระบบ Publish:
-Draft ไม่กระทบลิงก์ที่ส่งแล้ว
-Preview Draft
-Publish เป็น Snapshot
-Republish
-Unpublish
-Share link
-QR Code
-PIN ป้องกันหน้า
-กำหนดวันหมดอายุ
-Copy link
-Phase 12 — Dashboard
-Dashboard แสดง:
-My Birthday Experiences
+## Phase 10–13 Roadmap
 
-Chaw Birthday
-Draft
-[Edit] [Preview] [Publish]
+สถาปัตยกรรมที่เลือกใช้คือ **Static Frontend + Supabase** โดยไม่สร้าง Custom Backend Server และยังไม่ใช้ Edge Function เพราะฟีเจอร์ที่วางแผนไว้สามารถทำผ่าน Supabase Auth, PostgreSQL, RLS และ Database Function ได้โดยตรง
 
-Mint Birthday
-Published
-[Edit] [Open] [Unpublish]
-รองรับ:
-สร้างหลาย Experience
-Duplicate
-Rename
-Archive
-Delete
-ดูสถานะ
-วันที่แก้ล่าสุด
-Phase 13 — Testing และ Production
-ทดสอบ:
-Mobile 360–430px
-Desktop Chrome
-Android Chrome
-Samsung Internet
-iPhone Safari
-Quiz เปิด/ปิด
-Memories เปิด/ปิด
-Permission ไมค์รับ/ปฏิเสธ
-กดค้างเป่า
-Config ผิด
-รูป Upload ไม่สำเร็จ
-Internet หลุด
-User A เข้าถึง User B ไม่ได้
-Draft และ Published ไม่ปะปนกัน
-ลำดับที่แนะนำจากตอนนี้
-Avatar Editor
-↓
-Quiz Builder
-↓
-Gift Builder
-↓
-Memory Builder
-↓
-Settings Completion
-↓
-Supabase Auth/Database
-↓
-Publish/Share
-↓
-Dashboard
-↓
-Production Testing
-Step ถัดไปที่ควรเริ่มคือ Avatar Editor เพราะรูป Avatar ถูกใช้ทั้งหน้า Birthday Card และหน้า Memories และควรทำระบบ Upload/Crop ให้เสร็จก่อน Memory Builder ครับ
+รูป Avatar และ Memories จะเก็บเป็น URL ภายนอกหรือ Google Drive URL ภายใน Configuration เหมือนระบบปัจจุบัน ไม่ใช้ระบบ Upload และไม่ใช้ Supabase Storage
+
+### Phase 10 — Supabase Foundation และ Authentication
+
+เป้าหมาย: แยกข้อมูลของ User A/User B และย้าย Draft จาก Browser ไปเก็บออนไลน์
+
+- เชื่อม `supabase-js` ด้วย Supabase Project URL และ Publishable Key
+- ใช้ Supabase Auth แบบ Email/Password สำหรับผู้สร้าง HBD
+- เพิ่มหน้า Register, Login, Logout และ Forgot Password
+- ผู้รับ HBD ไม่ต้อง Register หรือ Login
+- สร้างตาราง `experiences` สำหรับเก็บ:
+  - `id`
+  - `owner_id`
+  - `title`
+  - `draft_config` แบบ JSONB
+  - `published_config` แบบ JSONB
+  - `schema_version`
+  - `status`
+  - `public_id`
+  - `created_at`, `updated_at`, `published_at`
+- เปิด Row Level Security ทุกตาราง
+- กำหนด Policy ให้ User อ่านและแก้ไขได้เฉพาะ Experience ที่ `owner_id` เป็นของตัวเอง
+- ทำ Migration สำหรับ Configuration ตาม `schemaVersion`
+- ยังคง Local Draft ไว้เป็นตัวสำรองเมื่ออินเทอร์เน็ตหลุด
+
+> ฝั่ง Browser ใช้ได้เฉพาะ Publishable Key ห้ามใส่ Secret Key หรือ Service Role Key ใน HTML/JavaScript
+
+### Phase 11 — Cloud Draft และ Dashboard
+
+เป้าหมาย: ผู้สร้างหนึ่งคนสามารถสร้างและจัดการ HBD ได้หลายรายการ
+
+- สร้างหน้า `My Birthday Experiences`
+- สร้าง Experience ใหม่จาก Default Configuration
+- บันทึก Settings เป็น Cloud Draft
+- Auto-save แบบหน่วงเวลา และมีปุ่ม Save Manual
+- แสดงสถานะ Saving, Saved, Offline และ Save failed
+- เปิดกลับมาแก้ไข Draft เดิมได้จากอุปกรณ์อื่นหลัง Login
+- รองรับ Rename, Duplicate, Archive และ Delete
+- แสดงสถานะ Draft/Published และวันที่แก้ไขล่าสุด
+- ป้องกันการเขียนทับข้อมูลเมื่อเปิดแก้จากหลาย Tab เท่าที่จำเป็น
+- URL รูป Avatar/Memories ยังคงอยู่ใน Config โดยไม่คัดลอกหรืออัปโหลดไฟล์
+
+ตัวอย่าง Dashboard:
+
+```text
+Chaw Birthday       Draft       [Edit] [Preview] [Publish]
+Mint Birthday       Published   [Edit] [Open] [Unpublish]
+```
+
+### Phase 12 — Publish และ Public HBD URL
+
+เป้าหมาย: เปลี่ยน Draft ให้เป็นหน้า HBD ที่ส่งให้ผู้รับเปิดได้
+
+- Preview Draft ด้วย Renderer เดียวกับหน้าใช้งานจริง
+- เมื่อกด Publish ให้คัดลอก `draft_config` ไปเป็น `published_config`
+- สร้าง `public_id` แบบสุ่มที่ยาวและคาดเดายาก
+- Draft ที่แก้ภายหลังจะไม่กระทบลิงก์ที่ส่งไปแล้วจนกว่าจะกด Republish
+- รองรับ Publish, Republish และ Unpublish
+- หน้า Public อ่าน `public_id` จาก URL แล้วดึง Published Configuration มา Render
+- ใช้ Supabase Database Function/RPC คืนเฉพาะ Published Experience ที่ตรงกับ `public_id`
+- ไม่เปิดสิทธิ์ให้ Anonymous อ่านรายการ Experience ทั้งตาราง
+- ผู้รับเปิดหน้า HBD ได้โดยไม่ต้อง Login
+- แสดงหน้า Not Found/Unpublished เมื่อ ID ไม่ถูกต้องหรือถูกยกเลิกเผยแพร่
+
+ตัวอย่าง Public URL:
+
+```text
+https://your-domain.com/?id=PUBLIC_ID
+```
+
+### Phase 13 — QR Code, Share และ Production Readiness
+
+เป้าหมาย: ส่งมอบลิงก์ได้ง่ายและตรวจสอบความพร้อมก่อนเปิดใช้งานจริง
+
+- สร้าง QR Code จาก Public URL ที่ฝั่ง Browser
+- ดาวน์โหลด QR Code เป็น PNG
+- Copy Link และเปิดหน้า Public ใน Tab ใหม่
+- QR Code เก็บเฉพาะ URL; ข้อมูล HBD จะถูกดึงจาก Supabase เมื่อเปิดหน้าเว็บ
+- ทดสอบ Mobile 360–430px และ Desktop
+- ทดสอบ Chrome, Android Chrome, Samsung Internet และ iPhone Safari
+- ทดสอบ Quiz/Memories ทั้งสถานะเปิดและปิด
+- ทดสอบ Permission ไมค์ทั้ง Allow/Deny และปุ่มกดค้างเพื่อเป่า
+- ทดสอบ URL รูปปกติ, Google Drive URL, URL เสีย และรูปโหลดช้า
+- ทดสอบ Offline, Save fail, Config ผิด และ Schema เก่า
+- ยืนยันว่า User A อ่านหรือแก้ Draft ของ User B ไม่ได้
+- ยืนยันว่า Draft และ Published Snapshot ไม่ปะปนกัน
+- ตรวจ RLS และ Security Advisor ก่อน Production
+- Deploy Static Frontend ขึ้น Hosting ที่รองรับ HTTPS
+
+### ลำดับดำเนินงานจากปัจจุบัน
+
+```text
+Phase 10: Supabase Foundation + Authentication
+                         ↓
+Phase 11: Cloud Draft + Dashboard
+                         ↓
+Phase 12: Publish + Public URL
+                         ↓
+Phase 13: QR Code + Share + Production Testing
+```
+
+Edge Function จะยังไม่ถูกเพิ่มใน Phase 10–13 หากภายหลังไม่มีฟีเจอร์ที่จำเป็นต้องใช้ Secret เช่น Payment, Transactional Email หรือการเชื่อมต่อบริการภายนอกแบบลับ
