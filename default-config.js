@@ -162,7 +162,7 @@ const DEFAULT_EXPERIENCE_CONFIG = {
         rewardType: 'bonusGift',
         rewardMode: 'bonusGift',
         cardTitle: 'ยังมีเซอร์ไพรส์นะ',
-        cardMessage: 'ถึงไม่ได้ Grand, High หรือ Medium แต่เรามีรางวัลพิเศษให้คุณ',
+        cardMessage: 'ถึงไม่ได้ รางวัลใหญ่ แต่เรามีรางวัลพิเศษให้คุณ',
         cardIcon: '🎁',
         bonusGift: {
           name: 'เงินสด 1,000 บาท',
