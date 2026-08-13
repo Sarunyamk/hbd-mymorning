@@ -1,5 +1,5 @@
 const DEFAULT_EXPERIENCE_CONFIG = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   birthday: {
     name: 'You',
     age: 30,
@@ -143,6 +143,10 @@ const DEFAULT_EXPERIENCE_CONFIG = {
       noGrand: {
         enabled: true,
         rewardType: 'bonusGift',
+        rewardMode: 'bonusGift',
+        cardTitle: 'ไม่ต้องเสียใจนะ',
+        cardMessage: 'ถึงยังไม่ได้รางวัลใหญ่ แต่ยังมีรางวัลพิเศษรออยู่นะ',
+        cardIcon: '💝',
         bonusGift: {
           name: 'รางวัลปลอบใจพิเศษ',
           icon: '💵',
@@ -153,6 +157,10 @@ const DEFAULT_EXPERIENCE_CONFIG = {
       noTopTier: {
         enabled: true,
         rewardType: 'bonusGift',
+        rewardMode: 'bonusGift',
+        cardTitle: 'ยังมีเซอร์ไพรส์นะ',
+        cardMessage: 'ถึงไม่ได้ Grand, High หรือ Medium แต่เรามีรางวัลพิเศษให้คุณ',
+        cardIcon: '🎁',
         bonusGift: {
           name: 'เงินสด 1,000 บาท',
           icon: '🎁',

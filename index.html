@@ -303,7 +303,29 @@
                 <div class="eyebrow" id="consolationRuleLabel"></div>
                 <h2 id="consolationTitle">รางวัลปลอบใจ</h2>
                 <p id="consolationDescription"></p>
-                <button class="primary" id="consolationAcceptBtn" onclick="acceptConsolation()">รับรางวัลพิเศษ 🎁</button>
+                <div class="consolation-actions">
+                  <button class="primary" id="consolationGiftBtn" onclick="chooseConsolation('bonusGift')">เปิดรางวัลปลอบใจ 🎁</button>
+                  <button class="secondary" id="consolationExtraBtn" onclick="chooseConsolation('extraPicks')">กลับไปจับเพิ่ม 🎟️</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="consolation-overlay" id="consolationUnwrapOverlay">
+              <div class="card consolation-unwrap-card">
+                <div id="consolationUnwrapStage">
+                  <span class="rarity special">SPECIAL GIFT</span>
+                  <button class="consolation-gift-box" id="consolationGiftBox" onclick="tapConsolationGift()" aria-label="แตะกล่องหรือลากโบว์เพื่อแกะของขวัญ">
+                    <span class="consolation-box-lid"></span><span class="consolation-box-body"></span>
+                    <span class="consolation-bow" onpointerdown="startConsolationBowDrag(event)" onpointermove="moveConsolationBowDrag(event)" onpointerup="endConsolationBowDrag(event)" onpointercancel="endConsolationBowDrag(event)">🎀</span>
+                  </button>
+                  <p id="consolationUnwrapHint">แตะกล่อง 3 ครั้ง หรือลากโบว์ออกเพื่อแกะ 🎀</p>
+                </div>
+                <div id="consolationGiftResult" hidden>
+                  <span class="rarity special">รางวัลปลอบใจพิเศษ</span>
+                  <div class="consolation-icon" id="consolationResultIcon">🎁</div>
+                  <h2 id="consolationResultName"></h2><p id="consolationResultDescription"></p>
+                  <button class="primary" onclick="keepConsolationGift()">เก็บรางวัลนี้ ✨</button>
+                </div>
               </div>
             </div>
 

@@ -3,7 +3,8 @@ const state = {
   picks:0, used:0, gifts:[], selectedBall:null,
   music:true, audioCtx:null, melodyTimer:null, micStream:null, micSource:null, analyser:null, micRAF:null,
   holdTimer:null, holdValue:0, boxOpened:false, blowCompleted:false, crackCount:0, finalOpened:false,
-  consolationApplied:false, consolationReward:null
+  consolationApplied:false, consolationReward:null, extraPickActive:false,
+  consolationUnwrapCount:0, consolationUnwrapDone:false, consolationBowDrag:null
 };
 
 const MIC_CONFIG = {
@@ -27,7 +28,14 @@ function mergeWithDefaults(defaultValue, customValue) {
 }
 
 function normalizeExperienceConfig(customConfig={}) {
-  const config=mergeWithDefaults(window.DEFAULT_EXPERIENCE_CONFIG,customConfig);
+  const source=cloneValue(customConfig||{});
+  if((Number(source.schemaVersion)||1)<4&&source.giftBox?.consolation){
+    ['noGrand','noTopTier'].forEach(ruleName=>{
+      const rule=source.giftBox.consolation[ruleName];
+      if(rule&&!rule.rewardMode)rule.rewardMode=rule.rewardType||'bonusGift';
+    });
+  }
+  const config=mergeWithDefaults(window.DEFAULT_EXPERIENCE_CONFIG,source);
   const validQuestions=config.quiz.questions.filter(item=>
     item && typeof item.text==='string' && Array.isArray(item.answers) && item.answers.length>=2 &&
     Number.isInteger(item.correctAnswerIndex) && item.correctAnswerIndex>=0 && item.correctAnswerIndex<item.answers.length
@@ -385,7 +393,7 @@ function answerQuestion(i,btn) {
 
 function enterGift(requestedPicks) {
   const configuredPicks=requestedPicks ?? (experienceConfig.features.quizEnabled?state.score:experienceConfig.giftBox.pickLimitWithoutQuiz);
-  state.picks=Math.min(gifts.length,Math.max(1,Number(configuredPicks)||1)); state.used=0; state.gifts=[]; state.boxOpened=false;state.consolationApplied=false;state.consolationReward=null;
+  state.picks=Math.min(gifts.length,Math.max(1,Number(configuredPicks)||1)); state.used=0; state.gifts=[]; state.boxOpened=false;state.consolationApplied=false;state.consolationReward=null;state.extraPickActive=false;
   document.getElementById('pickLimit').textContent=state.picks;
   document.getElementById('pickUsed').textContent=0;
   const box=document.getElementById('giftbox');box.classList.remove('open');box.classList.add('closed');
@@ -470,7 +478,7 @@ function revealGift(g) {
 function keepGift() {
   if(!state.selectedBall) return;
   const {el,gift}=state.selectedBall;
-  el.classList.add('used'); state.gifts.push(gift); state.used++;
+  el.classList.add('used'); state.gifts.push(state.extraPickActive?{...gift,source:'consolation-extra-pick'}:gift); state.used++;
   document.getElementById('pickUsed').textContent=state.used;
   document.getElementById('revealOverlay').classList.remove('show');
   state.selectedBall=null;
@@ -500,31 +508,88 @@ function finishGiftRound(){
 
 function showConsolation(rule){
   const config=rule.config,remaining=document.querySelectorAll('.ball:not(.used)').length;
-  state.consolationReward={rule,remaining,actualExtraPicks:config.rewardType==='extraPicks'?Math.min(Math.max(1,Number(config.extraPicks)||1),remaining):0};
+  const rewardMode=config.rewardMode||config.rewardType||'bonusGift';
+  state.consolationReward={rule,remaining,rewardMode,selected:false,actualExtraPicks:Math.min(Math.max(1,Number(config.extraPicks)||1),remaining)};
   document.getElementById('consolationRuleLabel').textContent=rule.label;
-  document.getElementById('consolationIcon').textContent=config.rewardType==='extraPicks'?'🎟️':config.bonusGift.icon;
-  document.getElementById('consolationTitle').textContent=config.rewardType==='extraPicks'?(state.consolationReward.actualExtraPicks?`ได้จับเพิ่มอีก ${state.consolationReward.actualExtraPicks} ครั้ง`:'ลูกบอลถูกเปิดครบแล้ว'):config.bonusGift.name;
-  document.getElementById('consolationDescription').textContent=config.rewardType==='extraPicks'?(state.consolationReward.actualExtraPicks?`ตั้งไว้ ${config.extraPicks} ครั้ง • เหลือลูกบอล ${remaining} ลูก ระบบให้ตามจำนวนที่จับได้จริง`:'ไม่มีลูกบอลเหลือสำหรับสิทธิ์เพิ่ม'):config.bonusGift.description;
-  document.getElementById('consolationAcceptBtn').textContent=config.rewardType==='extraPicks'&&state.consolationReward.actualExtraPicks?'กลับไปจับต่อ 🎟️':'รับรางวัลพิเศษ 🎁';
+  document.getElementById('consolationIcon').textContent=config.cardIcon||'💝';
+  document.getElementById('consolationTitle').textContent=config.cardTitle||'ไม่ต้องเสียใจนะ';
+  document.getElementById('consolationDescription').textContent=config.cardMessage||config.bonusGift.description;
+  const giftBtn=document.getElementById('consolationGiftBtn'),extraBtn=document.getElementById('consolationExtraBtn');
+  giftBtn.hidden=rewardMode==='extraPicks';extraBtn.hidden=rewardMode==='bonusGift';
+  giftBtn.disabled=false;extraBtn.disabled=!state.consolationReward.actualExtraPicks;
+  giftBtn.textContent=rewardMode==='playerChoice'?'เลือกรางวัลพิเศษ 🎁':'เปิดรางวัลปลอบใจ 🎁';
+  extraBtn.textContent=state.consolationReward.actualExtraPicks?`กลับไปจับเพิ่ม ${state.consolationReward.actualExtraPicks} ครั้ง 🎟️`:'ไม่มีลูกบอลเหลือ';
   document.getElementById('consolationOverlay').classList.add('show');celebrate(60);tone(523,.18,.045);setTimeout(()=>tone(784,.25,.05),170);
 }
 
-function acceptConsolation(){
-  const reward=state.consolationReward;if(!reward)return;
+function chooseConsolation(type){
+  const reward=state.consolationReward;if(!reward||reward.selected)return;
+  if(type==='extraPicks'&&!reward.actualExtraPicks)return;
+  reward.selected=true;
+  document.getElementById('consolationGiftBtn').disabled=true;document.getElementById('consolationExtraBtn').disabled=true;
   document.getElementById('consolationOverlay').classList.remove('show');
-  if(reward.rule.config.rewardType==='extraPicks'&&reward.actualExtraPicks>0){
+  if(type==='extraPicks'){
     state.picks+=reward.actualExtraPicks;document.getElementById('pickLimit').textContent=state.picks;
+    state.extraPickActive=true;
     document.querySelectorAll('.ball:not(.used)').forEach(ball=>ball.classList.remove('locked'));
     document.getElementById('giftHint').textContent=`รางวัลปลอบใจ: เลือกเพิ่มได้อีก ${reward.actualExtraPicks} ลูก ✨`;
     state.consolationReward=null;return;
   }
-  if(reward.rule.config.rewardType==='extraPicks'){
-    state.consolationReward=null;renderSummary();showScene('summary');celebrate(50);return;
-  }
-  if(reward.rule.config.rewardType==='bonusGift'){
-    const bonus={...cloneValue(reward.rule.config.bonusGift),id:`consolation-${reward.rule.key}`,rarity:'special',tier:'bonus',consolation:true};state.gifts.push(bonus);
-  }
-  state.consolationReward=null;renderSummary();showScene('summary');celebrate(50);
+  openConsolationGift();
+}
+
+function openConsolationGift(){
+  state.consolationUnwrapCount=0;state.consolationUnwrapDone=false;
+  const box=document.getElementById('consolationGiftBox');box.className='consolation-gift-box';
+  document.getElementById('consolationUnwrapHint').textContent='แตะกล่อง 3 ครั้ง หรือลากโบว์ออกเพื่อแกะ 🎀';
+  document.getElementById('consolationGiftResult').hidden=true;
+  document.getElementById('consolationUnwrapStage').hidden=false;
+  document.getElementById('consolationUnwrapOverlay').classList.add('show');
+}
+function tapConsolationGift(){
+  if(state.consolationUnwrapDone)return;
+  state.consolationUnwrapCount++;
+  const box=document.getElementById('consolationGiftBox');box.classList.add(`tap-${Math.min(3,state.consolationUnwrapCount)}`);
+  const left=3-state.consolationUnwrapCount;
+  document.getElementById('consolationUnwrapHint').textContent=left>0?`แตะอีก ${left} ครั้งเพื่อแกะของขวัญ ✨`:'เปิดแล้ว! 🎉';
+  tone(260+state.consolationUnwrapCount*100,.1,.035);
+  if(state.consolationUnwrapCount>=3)revealConsolationGift();
+}
+function startConsolationBowDrag(event){
+  if(state.consolationUnwrapDone)return;
+  event.stopPropagation();
+  event.currentTarget.setPointerCapture?.(event.pointerId);
+  state.consolationBowDrag={startX:event.clientX,startY:event.clientY};
+}
+function moveConsolationBowDrag(event){
+  event.stopPropagation();
+  const drag=state.consolationBowDrag;if(!drag||state.consolationUnwrapDone)return;
+  const dx=event.clientX-drag.startX,dy=event.clientY-drag.startY;
+  event.currentTarget.style.transform=`translate(calc(-50% + ${dx}px),${dy}px) rotate(${dx*.12}deg)`;
+  if(Math.hypot(dx,dy)>85){state.consolationBowDrag=null;revealConsolationGift();}
+}
+function endConsolationBowDrag(event){
+  event.stopPropagation();
+  state.consolationBowDrag=null;if(!state.consolationUnwrapDone)event.currentTarget.style.transform='';
+}
+function revealConsolationGift(){
+  if(state.consolationUnwrapDone)return;state.consolationUnwrapDone=true;
+  const bonus=state.consolationReward.rule.config.bonusGift;
+  document.getElementById('consolationGiftBox').classList.add('opened');
+  setTimeout(()=>{
+    document.getElementById('consolationUnwrapStage').hidden=true;
+    document.getElementById('consolationGiftResult').hidden=false;
+    document.getElementById('consolationResultIcon').textContent=bonus.icon;
+    document.getElementById('consolationResultName').textContent=bonus.name;
+    document.getElementById('consolationResultDescription').textContent=bonus.description;
+    celebrate(80);tone(523,.18,.05);setTimeout(()=>tone(784,.24,.05),160);
+  },650);
+}
+function keepConsolationGift(){
+  const reward=state.consolationReward;if(!reward||!state.consolationUnwrapDone)return;
+  const bonus={...cloneValue(reward.rule.config.bonusGift),id:`consolation-${reward.rule.key}`,rarity:'special',tier:'bonus',consolation:true,source:'consolation'};
+  state.gifts.push(bonus);state.consolationReward=null;
+  document.getElementById('consolationUnwrapOverlay').classList.remove('show');renderSummary();showScene('summary');celebrate(50);
 }
 
 function openFinalSurprise(button) {
@@ -541,12 +606,13 @@ function renderSummary() {
   const root=document.getElementById('giftGrid');root.innerHTML='';
   const list=state.gifts.length?state.gifts:gifts.slice(0,8);
   list.forEach((g,i)=>{
-    const d=document.createElement('div');d.className='gift-mini';d.style.animationDelay=(i*.06)+'s';
+    const d=document.createElement('div');d.className=`gift-mini ${(g.consolation||g.source==='consolation-extra-pick')?'consolation-summary-gift':''}`.trim();d.style.animationDelay=(i*.06)+'s';
     const icon=document.createElement('div');icon.className='emoji';icon.textContent=g.icon;
     const name=document.createElement('h4');name.textContent=g.name;
     const description=document.createElement('p');description.textContent=g.description;
     const rarity=document.createElement('span');rarity.className=`rarity ${g.rarity}`;rarity.style.marginTop='9px';rarity.textContent=g.rarity.toUpperCase();
     d.append(icon,name,description,rarity);
+    if(g.consolation||g.source==='consolation-extra-pick'){const badge=document.createElement('b');badge.className='consolation-summary-badge';badge.textContent=g.consolation?'✨ รางวัลปลอบใจพิเศษ':'🎟️ จากสิทธิ์ปลอบใจ';d.prepend(badge);}
     root.appendChild(d);
   });
 }
@@ -565,8 +631,9 @@ function celebrate(count=35) {
 
 function restartExperience() {
   stopMic(); clearInterval(state.melodyTimer);
-  state.score=0;state.qIndex=0;state.picks=0;state.used=0;state.gifts=[];state.boxOpened=false;state.blowCompleted=false;state.crackCount=0;state.finalOpened=false;state.consolationApplied=false;state.consolationReward=null;
+  state.score=0;state.qIndex=0;state.picks=0;state.used=0;state.gifts=[];state.boxOpened=false;state.blowCompleted=false;state.crackCount=0;state.finalOpened=false;state.consolationApplied=false;state.consolationReward=null;state.extraPickActive=false;state.consolationUnwrapDone=false;state.consolationBowDrag=null;
   document.getElementById('consolationOverlay').classList.remove('show');
+  document.getElementById('consolationUnwrapOverlay').classList.remove('show');
   renderCandles();setBlowMeter(0);document.getElementById('blowStatus').textContent='';
   const finalButton=document.getElementById('finalSurpriseBtn');
   finalButton.disabled=false;

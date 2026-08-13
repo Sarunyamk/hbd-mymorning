@@ -41,6 +41,19 @@ function migrateConfig(input){
     config.giftBox.consolation=config.giftBox.consolation||clone(defaults.giftBox.consolation);
     if(Array.isArray(config.giftBox.gifts))config.giftBox.gifts.forEach(gift=>{if(!gift.tier)gift.tier=gift.rarity==='special'?'grand':gift.rarity==='rare'?'high':'small';});
   }
+  if(version<4){
+    config.giftBox=config.giftBox||{};
+    config.giftBox.consolation=config.giftBox.consolation||clone(defaults.giftBox.consolation);
+    ['noGrand','noTopTier'].forEach(ruleName=>{
+      const rule=config.giftBox.consolation[ruleName]||{};
+      const fallback=defaults.giftBox.consolation[ruleName];
+      rule.rewardMode=rule.rewardMode||rule.rewardType||fallback.rewardMode;
+      rule.cardTitle=rule.cardTitle||fallback.cardTitle;
+      rule.cardMessage=rule.cardMessage||fallback.cardMessage;
+      rule.cardIcon=rule.cardIcon||fallback.cardIcon;
+      config.giftBox.consolation[ruleName]=rule;
+    });
+  }
   config.schemaVersion=defaults.schemaVersion;return config;
 }
 function getPath(object,path){return path.split('.').reduce((value,key)=>value?.[key],object);}
@@ -361,7 +374,11 @@ function updateDerivedUi(){
     if(maximumExtraPicks>0&&Number(rule.extraPicks)>maximumExtraPicks){rule.extraPicks=maximumExtraPicks;extraInput.value=maximumExtraPicks;}
     document.querySelector(`[data-extra-picks-hint="${ruleName}"]`).textContent=maximumExtraPicks>0?`เลือกได้ 1–${maximumExtraPicks} ครั้ง จากลูกบอล ${availableBalls} ลูก − สิทธิ์จับปกติ ${initialGiftPicks} ครั้ง`:`ไม่มีลูกบอลเหลือหลังใช้สิทธิ์จับปกติ ${initialGiftPicks} ครั้ง`;
     fields.classList.toggle('consolation-off',!rule.enabled);
-    document.querySelectorAll(`[data-consolation-reward^="${ruleName}:"]`).forEach(element=>{element.hidden=!element.dataset.consolationReward.endsWith(`:${rule.rewardType}`);});
+    const rewardMode=rule.rewardMode||rule.rewardType;
+    document.querySelectorAll(`[data-consolation-reward^="${ruleName}:"]`).forEach(element=>{
+      const type=element.dataset.consolationReward.split(':')[1];
+      element.hidden=rewardMode!=='playerChoice'&&rewardMode!==type;
+    });
   });
 }
 

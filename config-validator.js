@@ -20,6 +20,9 @@ const EXPERIENCE_LIMITS = Object.freeze({
   giftName: 40,
   giftIcon: 8,
   giftDescription: 100,
+  consolationCardTitle: 30,
+  consolationCardMessage: 120,
+  consolationCardIcon: 8,
   memoryMax: 10,
   memoryCaption: 50,
   memoryTitle: 30,
@@ -309,16 +312,24 @@ function validateExperienceConfig(config) {
       const rule = consolation?.[ruleName];
       if (!rule?.enabled) return;
       const base = `giftBox.consolation.${ruleName}`;
-      if (!['bonusGift', 'extraPicks'].includes(rule.rewardType))
-        addError(`${base}.rewardType`, 'INVALID_REWARD_TYPE', 'เลือกรางวัลเป็นของขวัญพิเศษหรือเพิ่มคูปองจับรางวัล');
-      if (rule.rewardType === 'extraPicks') {
+      const rewardMode=rule.rewardMode||rule.rewardType;
+      if (!['bonusGift', 'extraPicks', 'playerChoice'].includes(rewardMode))
+        addError(`${base}.rewardMode`, 'INVALID_REWARD_TYPE', 'เลือกรูปแบบรางวัลปลอบใจให้ถูกต้อง');
+      const cardTitle=text(rule.cardTitle),cardMessage=text(rule.cardMessage),cardIcon=text(rule.cardIcon);
+      if(!cardTitle)addError(`${base}.cardTitle`,'REQUIRED','กรุณากรอกหัวข้อการ์ดปลอบใจ');
+      else if(cardTitle.length>EXPERIENCE_LIMITS.consolationCardTitle)addError(`${base}.cardTitle`,'TEXT_TOO_LONG',`หัวข้อต้องไม่เกิน ${EXPERIENCE_LIMITS.consolationCardTitle} ตัวอักษร`);
+      if(!cardMessage)addError(`${base}.cardMessage`,'REQUIRED','กรุณากรอกข้อความปลอบใจ');
+      else if(cardMessage.length>EXPERIENCE_LIMITS.consolationCardMessage)addError(`${base}.cardMessage`,'TEXT_TOO_LONG',`ข้อความต้องไม่เกิน ${EXPERIENCE_LIMITS.consolationCardMessage} ตัวอักษร`);
+      if(!cardIcon)addError(`${base}.cardIcon`,'REQUIRED','กรุณากรอกไอคอนการ์ด');
+      else if(cardIcon.length>EXPERIENCE_LIMITS.consolationCardIcon)addError(`${base}.cardIcon`,'TEXT_TOO_LONG',`ไอคอนต้องไม่เกิน ${EXPERIENCE_LIMITS.consolationCardIcon} ตัวอักษร`);
+      if (rewardMode === 'extraPicks'||(rewardMode==='playerChoice'&&maximumExtraPicks>0)) {
         const extraPicks = Number(rule.extraPicks);
         if (maximumExtraPicks === 0)
           addError(`${base}.extraPicks`, 'NO_BALLS_REMAINING', 'เพิ่มสิทธิ์จับไม่ได้ เพราะสิทธิ์ปกติเท่ากับจำนวนลูกบอลทั้งหมด');
         else if (!Number.isInteger(extraPicks) || extraPicks < 1 || extraPicks > maximumExtraPicks)
           addError(`${base}.extraPicks`, 'OUT_OF_RANGE', `สิทธิ์จับเพิ่มต้องอยู่ระหว่าง 1–${maximumExtraPicks} จากลูกบอลที่เหลือ`);
       }
-      if (rule.rewardType === 'bonusGift') {
+      if (rewardMode === 'bonusGift'||rewardMode==='playerChoice') {
         const bonus = rule.bonusGift || {};
         if (!text(bonus.name)) addError(`${base}.bonusGift.name`, 'REQUIRED', 'กรุณากรอกชื่อของขวัญพิเศษ');
         else if (text(bonus.name).length > EXPERIENCE_LIMITS.giftName) addError(`${base}.bonusGift.name`, 'TEXT_TOO_LONG', `ชื่อของขวัญพิเศษต้องไม่เกิน ${EXPERIENCE_LIMITS.giftName} ตัวอักษร`);
