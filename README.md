@@ -388,6 +388,27 @@ Public URL และใช้ Error Correction ระดับ `H` เพื่�
 QR เดิมจะเห็นข้อมูลใหม่เพราะ `public_id` ไม่เปลี่ยน ส่วน Unpublish ทำให้ QR เดิม
 เปิดไม่ได้ชั่วคราว และ Delete ทำให้ลิงก์นั้นใช้ไม่ได้ถาวร
 
+## Consolation rewards
+
+Gift Settings รองรับรางวัลปลอบใจแบบ opt-in โดย Configuration เดิมจะปิด Feature
+นี้ไว้และใช้ Flow เดิม กำหนดกลุ่มรางวัลแต่ละลูกเป็น `grand`, `high`, `medium`
+หรือ `small` แล้วตั้งกฎสำเร็จรูปได้สองกฎ:
+
+1. ไม่ได้ Grand
+2. ไม่ได้ Grand, High และ Medium (Priority สูงกว่า)
+
+แต่ละกฎให้ของขวัญพิเศษหรือคูปองจับเพิ่มอย่างใดอย่างหนึ่ง ระบบตรวจเมื่อสิทธิ์
+ปัจจุบันหมด ให้เพียงกฎเดียวและให้แต่ละกฎทำงานครั้งเดียวต่อรอบ หากตั้งจับเพิ่ม
+มากกว่าลูกบอลที่เหลือ จะใช้จำนวนจริงตามสูตร:
+
+```text
+maximum extra picks in Settings = ball count - configured initial picks
+extra picks received at runtime = min(configured extra picks, unopened balls)
+```
+
+ตัวอย่าง ลูกบอล 20 ลูก เปิดแล้ว 8 ลูก เหลือ 12 ลูก แม้ตั้งสิทธิ์เพิ่มไว้ 20
+ผู้รับจะได้จับเพิ่มจริง 12 ครั้ง และลูกที่เปิดแล้วจะไม่ถูกเลือกซ้ำ
+
 ### ลำดับดำเนินงานจากปัจจุบัน
 
 ```text

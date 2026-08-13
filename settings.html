@@ -347,6 +347,28 @@
             <em class="collection-error" data-error="giftBox.gifts"></em>
             <div class="gift-editor-list" id="giftEditorList"></div>
             <button class="gift-add-button" id="appendGiftBtn" type="button">＋ เพิ่มลูกบอลและของรางวัล</button>
+            <div class="consolation-builder">
+              <label class="toggle-card consolation-master"><div><b>รางวัลปลอบใจ</b><span>ตรวจหนึ่งครั้งหลังใช้สิทธิ์ปัจจุบันครบ • ปิดไว้จะใช้ Flow เดิม</span></div><span class="switch"><input type="checkbox" data-path="giftBox.consolation.enabled"><i></i></span></label>
+              <div id="consolationRules">
+                <div class="consolation-priority"><b>ลำดับการตรวจ</b><span>กฎ 2 ถูกตรวจเทียบก่อนกฎ 1 และให้เพียงหนึ่งรางวัลต่อรอบ</span></div>
+                <article class="consolation-rule">
+                  <div class="consolation-rule-head"><div><span>กฎที่ 1</span><b>ถ้าไม่ได้ Grand</b><small>ใช้เมื่อไม่มี Grand และไม่เข้ากฎที่ 2 ซึ่งมี Priority สูงกว่า</small></div><label class="switch"><input type="checkbox" data-path="giftBox.consolation.noGrand.enabled"><i></i></label></div>
+                  <div class="consolation-fields" data-rule-fields="noGrand">
+                    <label class="field"><span>รางวัลเพิ่มเติม</span><select data-path="giftBox.consolation.noGrand.rewardType"><option value="bonusGift">ของขวัญพิเศษ</option><option value="extraPicks">เพิ่มคูปองจับรางวัล</option></select><em data-error="giftBox.consolation.noGrand.rewardType"></em></label>
+                    <div data-consolation-reward="noGrand:bonusGift"><div class="field-grid two-columns"><label class="field"><span>ชื่อของขวัญพิเศษ</span><input data-path="giftBox.consolation.noGrand.bonusGift.name" maxlength="40"><small class="counter" data-counter="giftBox.consolation.noGrand.bonusGift.name"></small><em data-error="giftBox.consolation.noGrand.bonusGift.name"></em></label><label class="field"><span>ไอคอน</span><input data-path="giftBox.consolation.noGrand.bonusGift.icon" maxlength="8"><small class="counter" data-counter="giftBox.consolation.noGrand.bonusGift.icon"></small><em data-error="giftBox.consolation.noGrand.bonusGift.icon"></em></label></div><label class="field"><span>รายละเอียด</span><textarea data-path="giftBox.consolation.noGrand.bonusGift.description" maxlength="100" rows="2"></textarea><small class="counter" data-counter="giftBox.consolation.noGrand.bonusGift.description"></small><em data-error="giftBox.consolation.noGrand.bonusGift.description"></em></label></div>
+                    <label class="field" data-consolation-reward="noGrand:extraPicks"><span>จำนวนสิทธิ์จับเพิ่ม</span><input type="number" min="1" data-path="giftBox.consolation.noGrand.extraPicks"><small data-extra-picks-hint="noGrand"></small><em data-error="giftBox.consolation.noGrand.extraPicks"></em></label>
+                  </div>
+                </article>
+                <article class="consolation-rule">
+                  <div class="consolation-rule-head"><div><span>กฎที่ 2 • Priority สูงกว่า</span><b>ถ้าไม่ได้ Grand, High และ Medium</b><small>ใช้เมื่อได้รับเฉพาะรางวัลกลุ่ม Small</small></div><label class="switch"><input type="checkbox" data-path="giftBox.consolation.noTopTier.enabled"><i></i></label></div>
+                  <div class="consolation-fields" data-rule-fields="noTopTier">
+                    <label class="field"><span>รางวัลเพิ่มเติม</span><select data-path="giftBox.consolation.noTopTier.rewardType"><option value="bonusGift">ของขวัญพิเศษ</option><option value="extraPicks">เพิ่มคูปองจับรางวัล</option></select><em data-error="giftBox.consolation.noTopTier.rewardType"></em></label>
+                    <div data-consolation-reward="noTopTier:bonusGift"><div class="field-grid two-columns"><label class="field"><span>ชื่อของขวัญพิเศษ</span><input data-path="giftBox.consolation.noTopTier.bonusGift.name" maxlength="40"><small class="counter" data-counter="giftBox.consolation.noTopTier.bonusGift.name"></small><em data-error="giftBox.consolation.noTopTier.bonusGift.name"></em></label><label class="field"><span>ไอคอน</span><input data-path="giftBox.consolation.noTopTier.bonusGift.icon" maxlength="8"><small class="counter" data-counter="giftBox.consolation.noTopTier.bonusGift.icon"></small><em data-error="giftBox.consolation.noTopTier.bonusGift.icon"></em></label></div><label class="field"><span>รายละเอียด</span><textarea data-path="giftBox.consolation.noTopTier.bonusGift.description" maxlength="100" rows="2"></textarea><small class="counter" data-counter="giftBox.consolation.noTopTier.bonusGift.description"></small><em data-error="giftBox.consolation.noTopTier.bonusGift.description"></em></label></div>
+                    <label class="field" data-consolation-reward="noTopTier:extraPicks"><span>จำนวนสิทธิ์จับเพิ่ม</span><input type="number" min="1" data-path="giftBox.consolation.noTopTier.extraPicks"><small data-extra-picks-hint="noTopTier"></small><em data-error="giftBox.consolation.noTopTier.extraPicks"></em></label>
+                  </div>
+                </article>
+              </div>
+            </div>
           </section>
           <section class="settings-section" data-panel="memories">
             <div class="section-heading">

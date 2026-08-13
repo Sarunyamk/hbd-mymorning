@@ -36,6 +36,11 @@ function migrateConfig(input){
     config.memories=config.memories||{};
     if(!Array.isArray(config.memories.filmItemIds))config.memories.filmItemIds=[];
   }
+  if(version<3){
+    config.giftBox=config.giftBox||{};
+    config.giftBox.consolation=config.giftBox.consolation||clone(defaults.giftBox.consolation);
+    if(Array.isArray(config.giftBox.gifts))config.giftBox.gifts.forEach(gift=>{if(!gift.tier)gift.tier=gift.rarity==='special'?'grand':gift.rarity==='rare'?'high':'small';});
+  }
   config.schemaVersion=defaults.schemaVersion;return config;
 }
 function getPath(object,path){return path.split('.').reduce((value,key)=>value?.[key],object);}
@@ -145,7 +150,7 @@ function giftColor(gift,index){
 }
 
 function createGift(index){
-  return {id:`g-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name:'',icon:'🎁',description:'',rarity:'normal',color:giftColor(null,index)};
+  return {id:`g-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name:'',icon:'🎁',description:'',rarity:'normal',tier:'small',color:giftColor(null,index)};
 }
 
 function renderGiftBuilder(openIndex){
@@ -161,6 +166,7 @@ function renderGiftBuilder(openIndex){
     gift.icon=typeof gift.icon==='string'?gift.icon:'';
     gift.name=typeof gift.name==='string'?gift.name:'';
     gift.description=typeof gift.description==='string'?gift.description:'';
+    gift.tier=['grand','high','medium','small'].includes(gift.tier)?gift.tier:(gift.rarity==='special'?'grand':gift.rarity==='rare'?'high':'small');
     const card=document.createElement('details');card.className='gift-editor-card';card.dataset.giftId=gift.id;card.dataset.giftIndex=index;
     card.open=previouslyOpen.has(gift.id)||index===openIndex||(!previouslyOpen.size&&openIndex===undefined&&index===0);
     const summary=document.createElement('summary');
@@ -178,11 +184,13 @@ function renderGiftBuilder(openIndex){
     const nameField=document.createElement('label');nameField.className='field';nameField.innerHTML=`<span>ชื่อของรางวัล</span><input data-gift-field="name" maxlength="${EXPERIENCE_LIMITS.giftName}"><small class="counter"></small><em data-error="giftBox.gifts.${index}.name"></em>`;
     nameField.querySelector('input').value=gift.name;nameField.querySelector('.counter').textContent=`${gift.name.length} / ${EXPERIENCE_LIMITS.giftName}`;
     firstRow.append(iconField,nameField);body.appendChild(firstRow);
-    const secondRow=document.createElement('div');secondRow.className='field-grid two-columns';
+    const secondRow=document.createElement('div');secondRow.className='field-grid three-columns';
     const colorField=document.createElement('label');colorField.className='field';colorField.innerHTML=`<span>สีลูกบอล</span><input type="color" data-gift-field="color" value="${giftColor(gift,index)}"><em data-error="giftBox.gifts.${index}.color"></em>`;
     const rarityField=document.createElement('label');rarityField.className='field';rarityField.innerHTML=`<span>ระดับของรางวัล</span><select data-gift-field="rarity"><option value="normal">Normal — ทั่วไป</option><option value="rare">Rare — หายาก</option><option value="special">Special — พิเศษ</option></select><em data-error="giftBox.gifts.${index}.rarity"></em>`;
     rarityField.querySelector('select').value=gift.rarity;
-    secondRow.append(colorField,rarityField);body.appendChild(secondRow);
+    const tierField=document.createElement('label');tierField.className='field';tierField.innerHTML=`<span>กลุ่มรางวัลสำหรับกฎปลอบใจ</span><select data-gift-field="tier"><option value="grand">Grand — รางวัลใหญ่สุด</option><option value="high">High — รางวัลใหญ่</option><option value="medium">Medium — รางวัลกลาง</option><option value="small">Small — รางวัลทั่วไป</option></select><em data-error="giftBox.gifts.${index}.tier"></em>`;
+    tierField.querySelector('select').value=gift.tier;
+    secondRow.append(colorField,rarityField,tierField);body.appendChild(secondRow);
     const descriptionField=document.createElement('label');descriptionField.className='field';descriptionField.innerHTML=`<span>รายละเอียดของรางวัล</span><textarea rows="3" data-gift-field="description" maxlength="${EXPERIENCE_LIMITS.giftDescription}"></textarea><small class="counter"></small><em data-error="giftBox.gifts.${index}.description"></em>`;
     descriptionField.querySelector('textarea').value=gift.description;descriptionField.querySelector('.counter').textContent=`${gift.description.length} / ${EXPERIENCE_LIMITS.giftDescription}`;body.appendChild(descriptionField);
     const tools=document.createElement('div');tools.className='gift-card-tools';
@@ -341,6 +349,20 @@ function updateDerivedUi(){
   document.getElementById('memoriesDisabledNote').hidden=memoriesEnabled;
   document.getElementById('memoryBuilderContent').classList.toggle('memory-builder-off',!memoriesEnabled);
   document.querySelector('[data-tab="memories"]').classList.toggle('feature-off',!memoriesEnabled);
+  const consolation=draftConfig.giftBox.consolation;
+  const initialGiftPicks=Math.min(availableBalls,Math.max(1,Number(draftConfig.giftBox.pickLimitWithoutQuiz)||1));
+  const maximumExtraPicks=Math.max(0,availableBalls-initialGiftPicks);
+  document.getElementById('consolationRules').classList.toggle('consolation-off',!consolation.enabled);
+  ['noGrand','noTopTier'].forEach(ruleName=>{
+    const rule=consolation[ruleName],fields=document.querySelector(`[data-rule-fields="${ruleName}"]`);
+    const extraInput=form.querySelector(`[data-path="giftBox.consolation.${ruleName}.extraPicks"]`);
+    extraInput.max=maximumExtraPicks;
+    extraInput.disabled=maximumExtraPicks===0;
+    if(maximumExtraPicks>0&&Number(rule.extraPicks)>maximumExtraPicks){rule.extraPicks=maximumExtraPicks;extraInput.value=maximumExtraPicks;}
+    document.querySelector(`[data-extra-picks-hint="${ruleName}"]`).textContent=maximumExtraPicks>0?`เลือกได้ 1–${maximumExtraPicks} ครั้ง จากลูกบอล ${availableBalls} ลูก − สิทธิ์จับปกติ ${initialGiftPicks} ครั้ง`:`ไม่มีลูกบอลเหลือหลังใช้สิทธิ์จับปกติ ${initialGiftPicks} ครั้ง`;
+    fields.classList.toggle('consolation-off',!rule.enabled);
+    document.querySelectorAll(`[data-consolation-reward^="${ruleName}:"]`).forEach(element=>{element.hidden=!element.dataset.consolationReward.endsWith(`:${rule.rewardType}`);});
+  });
 }
 
 function tabForPath(path=''){

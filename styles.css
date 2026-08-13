@@ -313,6 +313,7 @@ button { -webkit-tap-highlight-color:transparent; }
   background:rgba(7,4,15,.76); backdrop-filter:blur(12px);
 }
 .reveal-overlay.show { display:flex; }
+.consolation-overlay{position:absolute;inset:0;z-index:75;display:none;align-items:center;justify-content:center;padding:22px;background:radial-gradient(circle at 50% 30%,rgba(255,216,138,.2),transparent 34%),rgba(7,4,15,.82);backdrop-filter:blur(14px)}.consolation-overlay.show{display:flex}.consolation-card{width:330px;max-width:90vw;padding:28px 22px;animation:popIn .55s cubic-bezier(.18,.85,.25,1)}.consolation-icon{margin:12px 0 6px;font-size:76px}.consolation-card h2{margin:8px 0;font-size:26px;overflow-wrap:anywhere}.consolation-card p{color:#d9ccdf;line-height:1.55;overflow-wrap:anywhere}.consolation-card .primary{margin-top:10px}
 .reveal-ball {
   width:130px;height:130px;border-radius:50%; margin:auto; position:relative;
   display:block; border:2px solid rgba(255,255,255,.45); padding:0; cursor:pointer;

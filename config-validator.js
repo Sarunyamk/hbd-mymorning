@@ -277,6 +277,12 @@ function validateExperienceConfig(config) {
         'INVALID_RARITY',
         'Rarity ต้องเป็น normal, rare หรือ special'
       );
+    if (gift?.tier != null && !['grand', 'high', 'medium', 'small'].includes(gift.tier))
+      addError(
+        `${base}.tier`,
+        'INVALID_TIER',
+        'กลุ่มรางวัลต้องเป็น Grand, High, Medium หรือ Small'
+      );
     if (gift?.color && !/^#[0-9a-f]{6}$/i.test(gift.color))
       addError(
         `${base}.color`,
@@ -294,6 +300,42 @@ function validateExperienceConfig(config) {
       'OUT_OF_RANGE',
       'จำนวนสิทธิ์เลือกของขวัญต้องอยู่ระหว่าง 1 ถึงจำนวนลูกบอล'
     );
+
+  const consolation = config.giftBox?.consolation;
+  if (consolation?.enabled) {
+    const configuredInitialPicks = Math.min(ballCount, Math.max(1, Number(config.giftBox?.pickLimitWithoutQuiz) || 1));
+    const maximumExtraPicks = Math.max(0, ballCount - configuredInitialPicks);
+    ['noGrand', 'noTopTier'].forEach((ruleName) => {
+      const rule = consolation?.[ruleName];
+      if (!rule?.enabled) return;
+      const base = `giftBox.consolation.${ruleName}`;
+      if (!['bonusGift', 'extraPicks'].includes(rule.rewardType))
+        addError(`${base}.rewardType`, 'INVALID_REWARD_TYPE', 'เลือกรางวัลเป็นของขวัญพิเศษหรือเพิ่มคูปองจับรางวัล');
+      if (rule.rewardType === 'extraPicks') {
+        const extraPicks = Number(rule.extraPicks);
+        if (maximumExtraPicks === 0)
+          addError(`${base}.extraPicks`, 'NO_BALLS_REMAINING', 'เพิ่มสิทธิ์จับไม่ได้ เพราะสิทธิ์ปกติเท่ากับจำนวนลูกบอลทั้งหมด');
+        else if (!Number.isInteger(extraPicks) || extraPicks < 1 || extraPicks > maximumExtraPicks)
+          addError(`${base}.extraPicks`, 'OUT_OF_RANGE', `สิทธิ์จับเพิ่มต้องอยู่ระหว่าง 1–${maximumExtraPicks} จากลูกบอลที่เหลือ`);
+      }
+      if (rule.rewardType === 'bonusGift') {
+        const bonus = rule.bonusGift || {};
+        if (!text(bonus.name)) addError(`${base}.bonusGift.name`, 'REQUIRED', 'กรุณากรอกชื่อของขวัญพิเศษ');
+        else if (text(bonus.name).length > EXPERIENCE_LIMITS.giftName) addError(`${base}.bonusGift.name`, 'TEXT_TOO_LONG', `ชื่อของขวัญพิเศษต้องไม่เกิน ${EXPERIENCE_LIMITS.giftName} ตัวอักษร`);
+        if (!text(bonus.icon)) addError(`${base}.bonusGift.icon`, 'REQUIRED', 'กรุณากรอกไอคอนของขวัญพิเศษ');
+        else if (text(bonus.icon).length > EXPERIENCE_LIMITS.giftIcon) addError(`${base}.bonusGift.icon`, 'TEXT_TOO_LONG', `ไอคอนต้องไม่เกิน ${EXPERIENCE_LIMITS.giftIcon} ตัวอักษร`);
+        if (!text(bonus.description)) addError(`${base}.bonusGift.description`, 'REQUIRED', 'กรุณากรอกรายละเอียดของขวัญพิเศษ');
+        else if (text(bonus.description).length > EXPERIENCE_LIMITS.giftDescription) addError(`${base}.bonusGift.description`, 'TEXT_TOO_LONG', `รายละเอียดต้องไม่เกิน ${EXPERIENCE_LIMITS.giftDescription} ตัวอักษร`);
+      }
+    });
+    if (!consolation.noGrand?.enabled && !consolation.noTopTier?.enabled)
+      addWarning('giftBox.consolation', 'NO_RULE_ENABLED', 'เปิดรางวัลปลอบใจแล้ว แต่ยังไม่เปิดใช้กฎใด');
+    const tiers = new Set(gifts.map((gift) => gift.tier));
+    if (consolation.noGrand?.enabled && !tiers.has('grand'))
+      addWarning('giftBox.gifts', 'NO_GRAND_TIER', 'ยังไม่มีของรางวัลกลุ่ม Grand กฎไม่ได้ Grand จะตรงทุกครั้ง');
+    if (consolation.noTopTier?.enabled && !['grand','high','medium'].some((tier) => tiers.has(tier)))
+      addWarning('giftBox.gifts', 'NO_TOP_TIERS', 'ยังไม่มี Grand, High หรือ Medium กฎที่ 2 จะตรงทุกครั้ง');
+  }
 
   const memoriesEnabled = config.features?.memoriesEnabled !== false;
   const memories = Array.isArray(config.memories?.items)

@@ -1,5 +1,5 @@
 const DEFAULT_EXPERIENCE_CONFIG = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   birthday: {
     name: 'You',
     age: 30,
@@ -138,6 +138,29 @@ const DEFAULT_EXPERIENCE_CONFIG = {
   giftBox: {
     ballCount: 20,
     pickLimitWithoutQuiz: 8,
+    consolation: {
+      enabled: false,
+      noGrand: {
+        enabled: true,
+        rewardType: 'bonusGift',
+        bonusGift: {
+          name: 'รางวัลปลอบใจพิเศษ',
+          icon: '💵',
+          description: 'ยังมีของขวัญพิเศษสำหรับคุณ',
+        },
+        extraPicks: 2,
+      },
+      noTopTier: {
+        enabled: true,
+        rewardType: 'bonusGift',
+        bonusGift: {
+          name: 'เงินสด 1,000 บาท',
+          icon: '🎁',
+          description: 'ถึงไม่ได้รางวัลใหญ่ แต่ยังมีรางวัลพิเศษให้นะ',
+        },
+        extraPicks: 2,
+      },
+    },
     colors: [
       '#ff8fb8',
       '#9e88ff',
