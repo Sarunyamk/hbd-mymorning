@@ -1,95 +1,134 @@
-# HBD My Love — HTML / CSS / JavaScript
+# HBD My Love
 
-Interactive birthday website prototype built with plain HTML, CSS and JavaScript.
+เว็บสร้าง Birthday Experience แบบ Interactive ผู้สร้างสมัครสมาชิกและจัดการงานได้หลายรายการ จากนั้น Publish เป็น Public URL หรือ QR Code ให้ผู้รับเปิดได้โดยไม่ต้อง Login
 
-## Files
+โปรเจกต์เป็น Static Frontend ที่สร้างด้วย HTML, CSS, JavaScript และ Vite ใช้ Supabase สำหรับ Authentication และ Database จึงไม่ต้องมี Custom Backend Server สำหรับการใช้งานทั่วไป
 
-- `index.html` — main page / UI structure
-- `styles.css` — all visual styling and animations
-- `app.js` — user journey, quiz, candle blow detection, gift box logic, audio and effects
-- `docs/` — project specification documents
+## Features
 
-## Run locally
+- Creator Register, Login, Forgot Password และ Dashboard
+- สร้าง แก้ไข Rename Duplicate Archive และ Delete Experience
+- Auto-save Cloud Draft พร้อม Local fallback เมื่อ Offline
+- Live Preview ด้วย Renderer เดียวกับหน้า Public
+- ปรับชื่อ ข้อความ เค้ก Avatar Quiz Gift Balls ของรางวัล และ Memories
+- Color Theme สำเร็จรูป 15 แบบ
+- เปิดหรือปิด Quiz และกำหนดจำนวนของขวัญที่เปิดได้
+- รางวัลปลอบใจแบบของขวัญพิเศษ สิทธิ์จับเพิ่ม หรือให้ผู้รับเลือกเอง
+- Publish, Republish, Unpublish, Public URL และ QR Code
+- Admin จัดการสถานะหรือลบผู้ใช้ได้
+- Row Level Security แยกข้อมูลของผู้ใช้แต่ละคน
 
-Because microphone access may be blocked when opening the file directly with `file://`,
-run the project through a local web server.
+## Requirements
 
-### VS Code Live Server
+- Node.js 22 หรือใหม่กว่า
+- npm
+- Supabase project
+- GitHub repository หากต้องการ Deploy ด้วย GitHub Pages
+- Supabase CLI เฉพาะกรณีที่ต้องการใช้หน้า Admin เพื่อลบหรือระงับผู้ใช้ โดยเรียกผ่าน `npx` ได้
 
-Open `index.html` with the Live Server extension.
-
-### Python
-
-```bash
-python -m http.server 5500
-```
-
-Then open:
-
-```text
-http://localhost:5500
-```
-
-### Vite (required for Supabase/Auth)
+## 1. Clone และติดตั้ง
 
 ```bash
-npm install
-npm run dev
+git clone YOUR_REPOSITORY_URL
+cd YOUR_PROJECT_FOLDER
+npm ci
 ```
 
-Then open the URL shown by Vite, normally:
+ถ้าแก้ Dependencies ให้ใช้ `npm install` และ Commit `package-lock.json` ที่เปลี่ยนแปลงด้วย
 
-```text
-http://localhost:5173
+## 2. สร้าง Supabase project
+
+สร้าง Project ที่ [Supabase](https://supabase.com/) แล้วตั้งค่า Data API ดังนี้:
+
+- Enable Data API: เปิด
+- Automatically expose new tables: ปิด
+- Enable automatic RLS: เปิด
+
+เปิด Supabase SQL Editor แล้วรัน Migration ตามลำดับ:
+
+1. [`supabase/migrations/20260811000000_phase10_foundation.sql`](supabase/migrations/20260811000000_phase10_foundation.sql)
+2. [`supabase/migrations/20260811010000_admin_roles.sql`](supabase/migrations/20260811010000_admin_roles.sql)
+
+Migration จะสร้าง `experiences`, `profiles`, RLS policies, Database functions และ Public RPC สำหรับโหลด Published Experience
+
+## 3. ตั้งค่า Environment Variables
+
+คัดลอก `.env.example` เป็น `.env`:
+
+```bash
+cp .env.example .env
 ```
 
-Vite is required from Phase 10 onward because it loads the Supabase variables from
-`.env`. Opening the HTML files with `file://` does not load those variables.
+บน Windows PowerShell:
 
-## Phase 10 Supabase setup
+```powershell
+Copy-Item .env.example .env
+```
 
-Create `.env` from `.env.example` and provide only the browser-safe values from the
-Supabase Connect dialog:
+ไปที่ Supabase Project แล้วเปิด Connect หรือ Project Settings เพื่อคัดลอก Project URL และ Publishable Key:
 
 ```env
 VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_KEY
 ```
 
-Never put a Secret Key, Service Role Key, database password, or connection string in
-the frontend environment file.
+ค่าทั้งสองถูกใช้ใน Browser และต้องเป็น Publishable Key เท่านั้น ห้ามใส่ Secret Key, Service Role Key, Database Password หรือ Connection String ใน `.env`, Frontend JavaScript หรือ GitHub Actions ที่ใช้ Build Vite
 
-In Supabase **Integrations → Data API**, use these settings:
+ไฟล์ `.env` ถูก Ignore โดย Git และไม่ควร Commit
 
-- Enable Data API: on
-- Automatically expose new tables: off
-- Enable automatic RLS: on
+## 4. ตั้งค่า Authentication URLs
 
-Run [`supabase/migrations/20260811000000_phase10_foundation.sql`](supabase/migrations/20260811000000_phase10_foundation.sql)
-once in the Supabase SQL Editor. It creates the `experiences` table, owner-only RLS
-policies, explicit grants, update trigger, and the public read RPC used by a published
-HBD URL.
+ใน Supabase ไปที่ Authentication → URL Configuration
 
-In Supabase **Authentication → URL Configuration**, configure:
+สำหรับ Local development:
 
 ```text
-Site URL: http://localhost:5173
+Site URL: http://localhost:5173/
 Redirect URL: http://localhost:5173/auth.html
 ```
 
-Add the production domain and its `/auth.html` URL before deployment. The creator uses
-`auth.html` to register, sign in, recover a password, and sign out. Recipients do not
-need an account to open a published HBD URL.
+เมื่อมี Production URL ให้เพิ่ม URL จริงด้วย เช่น:
 
-## Admin roles and user management
+```text
+https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPOSITORY/
+https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPOSITORY/auth.html
+```
 
-Run [`supabase/migrations/20260811010000_admin_roles.sql`](supabase/migrations/20260811010000_admin_roles.sql)
-after the Phase 10 migration. It creates `profiles`, makes every new registration a
-normal `user`, blocks inactive accounts in RLS, adds admin-only summary RPCs, and
-hides an inactive creator's Public HBD pages.
+ผู้สร้างใช้ `auth.html` เพื่อสมัครและเข้าสู่ระบบ ส่วนผู้รับ Birthday Experience ไม่ต้องมี Account
 
-Promote the first admin once in the Supabase SQL Editor. Replace the email below with
-the account that should own the Admin dashboard:
+## 5. รันในเครื่อง
+
+```bash
+npm run dev
+```
+
+เปิด URL ที่ Vite แสดง ปกติคือ:
+
+```text
+http://localhost:5173/auth.html
+```
+
+อย่าเปิดผ่าน `file://`, Python HTTP Server หรือ VS Code Live Server เพราะโปรเจกต์ใช้ Vite Environment Variables และ npm module ของ Supabase
+
+เส้นทางหลัก:
+
+```text
+Creator: auth.html → dashboard.html → settings.html?experience=<uuid>
+Recipient: index.html?id=<public-id>
+```
+
+## 6. ทดสอบ Production Build
+
+```bash
+npm run build
+npm run preview
+```
+
+ไฟล์ที่ Deploy จะถูกสร้างใน `dist/`
+
+## 7. ตั้ง Admin คนแรก (Optional)
+
+ทุก Account ใหม่จะมี Role เป็น `user` หากต้องการใช้ `admin.html` ให้เปลี่ยน Account แรกเป็น Admin ผ่าน Supabase SQL Editor โดยแก้ Email ให้ถูกต้อง:
 
 ```sql
 insert into public.profiles (id, role, is_active, created_at)
@@ -100,340 +139,99 @@ on conflict (id) do update
 set role = 'admin', is_active = true;
 ```
 
-User deletion and Auth banning require server-side Admin APIs, so deploy the included
-Edge Function:
+จากนั้น Logout แล้ว Login ใหม่
+
+การลบหรือระงับ Auth user ต้องใช้ Server-side Admin API จึงต้อง Deploy Edge Function ที่มีอยู่ในโปรเจกต์:
 
 ```bash
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF
-supabase functions deploy admin-users --no-verify-jwt
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase functions deploy admin-users --no-verify-jwt
 ```
 
-`verify_jwt` is disabled at the gateway because the function verifies the caller's
-real user access token itself, then checks the protected `profiles.role` again before
-using the server-side secret. Supabase provides the server credentials to deployed
-functions; never add `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` to `.env`,
-GitHub Secrets used by Vite, or frontend JavaScript.
+Function จะตรวจ Access Token และ Role Admin อีกครั้งก่อนใช้ Secret ฝั่ง Supabase ห้ามนำ `SUPABASE_SECRET_KEY` หรือ `SUPABASE_SERVICE_ROLE_KEY` มาใส่ใน Frontend `.env`
 
-After promotion, log out and in again. The Dashboard will show **Admin**, which opens
-`admin.html`. Admin can view user and Experience metadata, deactivate/reactivate an
-account, or delete it. Deleting an Auth user cascades through `owner_id` and removes
-all of that user's `experiences` and `profiles` rows.
+เมื่อลบ Auth user ระบบจะลบ `profiles` และ Experiences ของผู้ใช้นั้นผ่าน Database cascade
 
-## Deploy to GitHub Pages
+หากไม่ต้องการระบบ Admin สามารถข้ามขั้นตอนนี้ได้ ฟีเจอร์สร้างและ Publish HBD ยังใช้งานได้ตามปกติ
 
-This repository is configured for the project site:
+## 8. Deploy ด้วย GitHub Pages
+
+### เปลี่ยน Base Path
+
+เปิด [`vite.config.js`](vite.config.js) แล้วเปลี่ยนชื่อ Repository ใน `base`:
+
+```js
+base: command === 'build' || isPreview ? '/YOUR_REPOSITORY/' : '/',
+```
+
+ถ้า Deploy ที่ Root domain ให้ใช้ `/`
+
+### เพิ่ม GitHub Actions Secrets
+
+ใน GitHub repository ไปที่ Settings → Secrets and variables → Actions แล้วเพิ่ม:
 
 ```text
-https://sarunyamk.github.io/hbd-mymorning/
+VITE_SUPABASE_URL
+VITE_SUPABASE_PUBLISHABLE_KEY
 ```
 
-The Vite base path is applied only during `npm run build`, so local development keeps
-using `http://localhost:5173/`. The workflow at
-`.github/workflows/deploy-pages.yml` builds all four HTML entry points and deploys
-the `dist` directory whenever `main` is updated.
+### เปิด GitHub Pages
 
-Complete these one-time settings in GitHub:
+ไปที่ Settings → Pages → Build and deployment แล้วเลือก Source เป็น GitHub Actions
 
-1. Go to **Settings → Secrets and variables → Actions**.
-2. Add repository secrets named `VITE_SUPABASE_URL` and
-   `VITE_SUPABASE_PUBLISHABLE_KEY` using the values from local `.env`.
-3. Go to **Settings → Pages → Build and deployment**.
-4. Select **GitHub Actions** as the Source.
+Workflow [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) จะ Build และ Deploy `dist/` อัตโนมัติเมื่อ Push เข้า Branch `main` หรือสั่ง Run workflow เอง
 
-Complete these one-time settings in Supabase **Authentication → URL Configuration**:
+อย่าลืมเพิ่ม Production URL และ `/auth.html` ใน Supabase Authentication URL Configuration ตามขั้นตอนที่ 4
+
+## วิธีใช้งาน
+
+1. เปิด `auth.html` แล้วสมัครหรือ Login
+2. สร้าง Experience จาก Dashboard
+3. แก้ข้อมูลใน Settings และตรวจ Live Preview
+4. กด Save Draft
+5. กด Publish ที่ Dashboard
+6. Copy Public URL หรือ Download QR Code ส่งให้ผู้รับ
+
+การแก้ Draft ไม่เปลี่ยนหน้าที่ส่งไปแล้วจนกว่าจะกด Republish โดย QR เดิมยังใช้ได้เพราะ `public_id` ไม่เปลี่ยน หาก Unpublish ลิงก์จะเปิดไม่ได้ชั่วคราว และหาก Delete ลิงก์จะใช้ไม่ได้ถาวร
+
+## รูป Avatar และ Memories
+
+ระบบรับ URL ภายนอกแทนการ Upload ไฟล์ รูปจาก Google Drive ต้องเปิดสิทธิ์ให้ผู้ที่มีลิงก์ดูได้ ระบบจะแปลง Google Drive share URL ที่รองรับเป็น URL สำหรับแสดงรูป
+
+ควรใช้รูปที่โหลดผ่าน HTTPS และทดสอบ Public URL ในหน้าต่าง Incognito เพื่อยืนยันว่าผู้รับที่ไม่ได้ Login มองเห็นรูปได้
+
+## โครงสร้างสำคัญ
 
 ```text
-Site URL: https://sarunyamk.github.io/hbd-mymorning/
-
-Redirect URLs:
-http://localhost:5173/auth.html
-https://sarunyamk.github.io/hbd-mymorning/auth.html
+index.html / app.js / styles.css       Public Experience renderer
+auth.html / auth.js                    Creator authentication
+dashboard.html / dashboard.js          Experience dashboard, Publish และ QR
+settings.html / settings.js            Configuration builder และ Live Preview
+default-config.js                      Default Experience configuration
+config-validator.js                    Configuration validation
+theme-presets.js                       Theme presets 15 แบบ
+experience-service.js                  Supabase Experience operations
+supabase-client.js                     Browser-safe Supabase client
+supabase/migrations/                   Database schema, RLS และ RPC
+supabase/functions/admin-users/        Optional Admin Edge Function
+.github/workflows/deploy-pages.yml      GitHub Pages deployment
 ```
 
-After the feature branch is merged into `main`, follow the deployment in the GitHub
-**Actions** tab. You can also run the workflow manually with **Run workflow**.
+## Security Notes
 
-## Git
+- เปิด RLS สำหรับตารางที่ Client เข้าถึงเสมอ
+- Frontend ใช้เฉพาะ Supabase Publishable Key
+- ผู้ใช้แก้ไขได้เฉพาะ Experience ที่ `owner_id` เป็นของตัวเอง
+- Public page อ่านเฉพาะ Published snapshot ผ่าน RPC และไม่อ่านตารางทั้งหมด
+- Secret หรือ Service Role ใช้ได้เฉพาะ Server/Edge Function
+- Microphone ต้องใช้ HTTPS หรือ `localhost`
+- Browser จะเริ่มเสียงหลังผู้ใช้ Interaction เท่านั้น เนื่องจาก Autoplay policy
+
+## Commands
 
 ```bash
-git init
-git add .
-git commit -m "Initial HBD My Love prototype"
-git branch -M main
-git remote add origin YOUR_REPOSITORY_URL
-git push -u origin main
+npm run dev       # Local development
+npm run build     # Production build
+npm run preview   # Preview dist locally
 ```
-
-## Notes
-
-- Microphone blow detection uses `navigator.mediaDevices.getUserMedia`.
-- Browsers normally require HTTPS for microphone access, except `localhost`.
-- Audio starts only after a user interaction because browsers block autoplay.
-- No custom backend server or Edge Function is required; Phase 10 uses Supabase directly.
-- Experience content is rendered from the shared configuration schema.
-
-Step ถัดไป
-Phase 5 — Avatar Editor
-สร้างระบบ:
-Upload รูป
-↓
-Crop ใบหน้า
-↓
-Zoom / Move / Rotate
-↓
-เลือกหมวกวันเกิด
-↓
-ปรับตำแหน่งและขนาดหมวก
-↓
-บันทึกภาพที่ตกแต่งแล้ว
-ต้องรองรับ:
-JPG, PNG, WebP
-ตรวจขนาดไฟล์
-Crop แบบสี่เหลี่ยม
-Preview แบบวงกลม
-หมวกสำเร็จรูป 3–5 แบบ
-ใช้รูปเดียวกันใน Birthday Card และ Memories
-เก็บรูปต้นฉบับกับรูปตกแต่งแยกกัน
-Phase 6 — Quiz Builder
-สร้าง UI แก้คำถามจริง:
-เพิ่ม/ลบคำถาม
-จำนวน 5–25 ข้อ
-เรียงคำถามใหม่
-คำตอบ 2–4 ตัวเลือก
-เลือกเฉลยด้วย Radio
-Character Counter
-Duplicate คำถาม
-Collapse/Expand แต่ละข้อ
-แจ้ง error รายคำถาม
-ถ้าปิด Quiz:
-Birthday Card
-↓
-Gift Box
-และกำหนดจำนวนสิทธิ์เลือกของขวัญโดยตรงได้
-Phase 7 — Gift Ball Builder
-เพิ่ม:
-จำนวนลูกบอล 10–25 ลูก
-จำนวนสิทธิ์เลือกเมื่อไม่มี Quiz
-ของรางวัลหนึ่งรายการต่อลูกบอล
-ชื่อรางวัล
-รายละเอียด
-Emoji/Icon
-สีลูกบอล
-Rarity: Normal/Rare/Special
-Duplicate และเรียงรางวัล
-ตรวจจำนวนรางวัลให้ตรงกับลูกบอล
-Phase 8 — Memory Builder
-เพิ่ม:
-Upload สูงสุด 10 รูป
-Caption สูงสุด 50 ตัวอักษร
-Crop และ Object position
-ลากเรียงลำดับ
-เลือก Layout:Featured
-Polaroid
-Wide
-Film
-
-Preview Mobile
-เปิด–ปิด Memories
-แถบ Film จะอ้างอิงจาก Memory items เดิม เพื่อไม่ให้นับรูปซ้ำ
-Phase 9 — Settings Completion
-เพิ่มส่วนที่ยังขาด:
-Unsaved change indicator
-Save Draft แบบ Manual
-Publish checklist
-Jump ไปยัง field ที่ผิด
-Duplicate Experience
-Configuration migration ด้วย schemaVersion
-ป้องกัน Import Config เวอร์ชันที่ไม่รองรับ
-Preview เลือก Scene:Intro
-Cake
-Card
-Quiz
-Gift Box
-Memories
-Final
-
-## Phase 10–13 Roadmap
-
-สถาปัตยกรรมที่เลือกใช้คือ **Static Frontend + Supabase** โดยไม่สร้าง Custom Backend Server และยังไม่ใช้ Edge Function เพราะฟีเจอร์ที่วางแผนไว้สามารถทำผ่าน Supabase Auth, PostgreSQL, RLS และ Database Function ได้โดยตรง
-
-รูป Avatar และ Memories จะเก็บเป็น URL ภายนอกหรือ Google Drive URL ภายใน Configuration เหมือนระบบปัจจุบัน ไม่ใช้ระบบ Upload และไม่ใช้ Supabase Storage
-
-### Phase 10 — Supabase Foundation และ Authentication
-
-เป้าหมาย: แยกข้อมูลของ User A/User B และย้าย Draft จาก Browser ไปเก็บออนไลน์
-
-- เชื่อม `supabase-js` ด้วย Supabase Project URL และ Publishable Key
-- ใช้ Supabase Auth แบบ Email/Password สำหรับผู้สร้าง HBD
-- เพิ่มหน้า Register, Login, Logout และ Forgot Password
-- ผู้รับ HBD ไม่ต้อง Register หรือ Login
-- สร้างตาราง `experiences` สำหรับเก็บ:
-  - `id`
-  - `owner_id`
-  - `title`
-  - `draft_config` แบบ JSONB
-  - `published_config` แบบ JSONB
-  - `schema_version`
-  - `status`
-  - `public_id`
-  - `created_at`, `updated_at`, `published_at`
-- เปิด Row Level Security ทุกตาราง
-- กำหนด Policy ให้ User อ่านและแก้ไขได้เฉพาะ Experience ที่ `owner_id` เป็นของตัวเอง
-- ทำ Migration สำหรับ Configuration ตาม `schemaVersion`
-- ยังคง Local Draft ไว้เป็นตัวสำรองเมื่ออินเทอร์เน็ตหลุด
-
-> ฝั่ง Browser ใช้ได้เฉพาะ Publishable Key ห้ามใส่ Secret Key หรือ Service Role Key ใน HTML/JavaScript
-
-### Phase 11 — Cloud Draft และ Dashboard
-
-เป้าหมาย: ผู้สร้างหนึ่งคนสามารถสร้างและจัดการ HBD ได้หลายรายการ
-
-- สร้างหน้า `My Birthday Experiences`
-- สร้าง Experience ใหม่จาก Default Configuration
-- บันทึก Settings เป็น Cloud Draft
-- Auto-save แบบหน่วงเวลา และมีปุ่ม Save Manual
-- แสดงสถานะ Saving, Saved, Offline และ Save failed
-- เปิดกลับมาแก้ไข Draft เดิมได้จากอุปกรณ์อื่นหลัง Login
-- รองรับ Rename, Duplicate, Archive และ Delete
-- แสดงสถานะ Draft/Published และวันที่แก้ไขล่าสุด
-
-Phase 11 ใช้งานผ่าน `dashboard.html` หลัง Login โดยตรง แต่ละงานจะเปิด Settings
-ด้วย `settings.html?experience=<experience-id>` เพื่อแยก Local fallback และ Cloud
-Draft ของแต่ละงานออกจากกัน การแก้ไขจะเก็บลง Browser ก่อนเสมอ แล้ว Auto-save ไป
-Supabase หลังหยุดพิมพ์ พร้อมปุ่ม **Save Draft** สำหรับบันทึกทันที
-
-หาก Offline ผู้สร้างยังแก้ Draft ที่เคยเปิดบนอุปกรณ์นั้นได้ ข้อมูลจะรอ Sync เมื่อ
-กลับมา Online ส่วน Rename, Duplicate, Archive และ Delete ต้องเชื่อมต่อ Cloud
-ถ้ามีอีกแท็บแก้ Cloud Draft เดียวกันก่อน ระบบจะหยุดการเขียนทับและให้เลือกโหลด
-เวอร์ชันล่าสุดจาก Cloud
-
-เส้นทางหลักของ Creator:
-
-```text
-auth.html → dashboard.html → settings.html?experience=<uuid>
-```
-
-Phase 11 ยังไม่มี Publish, Public URL และ QR Code ซึ่งจะทำใน Phase 12–13
-- ป้องกันการเขียนทับข้อมูลเมื่อเปิดแก้จากหลาย Tab เท่าที่จำเป็น
-- URL รูป Avatar/Memories ยังคงอยู่ใน Config โดยไม่คัดลอกหรืออัปโหลดไฟล์
-
-ตัวอย่าง Dashboard:
-
-```text
-Chaw Birthday       Draft       [Edit] [Preview] [Publish]
-Mint Birthday       Published   [Edit] [Open] [Unpublish]
-```
-
-### Phase 12 — Publish และ Public HBD URL
-
-เป้าหมาย: เปลี่ยน Draft ให้เป็นหน้า HBD ที่ส่งให้ผู้รับเปิดได้
-
-- Preview Draft ด้วย Renderer เดียวกับหน้าใช้งานจริง
-- เมื่อกด Publish ให้คัดลอก `draft_config` ไปเป็น `published_config`
-- สร้าง `public_id` แบบสุ่มที่ยาวและคาดเดายาก
-- Draft ที่แก้ภายหลังจะไม่กระทบลิงก์ที่ส่งไปแล้วจนกว่าจะกด Republish
-- รองรับ Publish, Republish และ Unpublish
-- หน้า Public อ่าน `public_id` จาก URL แล้วดึง Published Configuration มา Render
-- ใช้ Supabase Database Function/RPC คืนเฉพาะ Published Experience ที่ตรงกับ `public_id`
-- ไม่เปิดสิทธิ์ให้ Anonymous อ่านรายการ Experience ทั้งตาราง
-- ผู้รับเปิดหน้า HBD ได้โดยไม่ต้อง Login
-- แสดงหน้า Not Found/Unpublished เมื่อ ID ไม่ถูกต้องหรือถูกยกเลิกเผยแพร่
-
-การ Publish ทำจากหน้า Dashboard ระบบจะตรวจ Validation ของ Cloud Draft ก่อน แล้ว
-สร้าง Published Snapshot ที่ไม่เปลี่ยนตาม Draft จนกว่าจะกด **Republish** หากกด
-**Unpublish** ลิงก์เดิมจะเปิดไม่ได้ชั่วคราว และเมื่อ Publish ใหม่จะกลับมาใช้
-`public_id` เดิม
-
-Public URL ใช้รูปแบบ:
-
-```text
-https://sarunyamk.github.io/hbd-mymorning/?id=<public-id>
-```
-
-หน้า Public เรียกเฉพาะ RPC `get_published_experience` ผู้รับไม่ต้อง Login และไม่มี
-สิทธิ์อ่านตาราง `experiences` โดยตรง ส่วน Copy Link และ QR Code จะเพิ่มใน Phase 13
-
-ตัวอย่าง Public URL:
-
-```text
-https://your-domain.com/?id=PUBLIC_ID
-```
-
-### Phase 13 — QR Code, Share และ Production Readiness
-
-เป้าหมาย: ส่งมอบลิงก์ได้ง่ายและตรวจสอบความพร้อมก่อนเปิดใช้งานจริง
-
-- สร้าง QR Code จาก Public URL ที่ฝั่ง Browser
-- ดาวน์โหลด QR Code เป็น PNG
-- Copy Link และเปิดหน้า Public ใน Tab ใหม่
-- QR Code เก็บเฉพาะ URL; ข้อมูล HBD จะถูกดึงจาก Supabase เมื่อเปิดหน้าเว็บ
-- ทดสอบ Mobile 360–430px และ Desktop
-- ทดสอบ Chrome, Android Chrome, Samsung Internet และ iPhone Safari
-- ทดสอบ Quiz/Memories ทั้งสถานะเปิดและปิด
-- ทดสอบ Permission ไมค์ทั้ง Allow/Deny และปุ่มกดค้างเพื่อเป่า
-- ทดสอบ URL รูปปกติ, Google Drive URL, URL เสีย และรูปโหลดช้า
-- ทดสอบ Offline, Save fail, Config ผิด และ Schema เก่า
-- ยืนยันว่า User A อ่านหรือแก้ Draft ของ User B ไม่ได้
-- ยืนยันว่า Draft และ Published Snapshot ไม่ปะปนกัน
-- ตรวจ RLS และ Security Advisor ก่อน Production
-- Deploy Static Frontend ขึ้น Hosting ที่รองรับ HTTPS
-
-Dashboard ของ Published Experience มี **Share / QR** แล้ว โดย QR เข้ารหัสเฉพาะ
-Public URL และใช้ Error Correction ระดับ `H` เพื่อให้วางไอคอนตรงกลางได้อย่าง
-ปลอดภัยขึ้น ผู้สร้างเลือกธีมเค้ก 🎂 หรือของขวัญ 🎁, Copy Link, เปิด HBD และ
-ดาวน์โหลด PNG ขนาด 900×1100 px ได้
-
-การแก้ Draft ไม่เปลี่ยนหน้าที่ QR เปิดจนกว่าจะกด Republish เมื่อ Republish แล้ว
-QR เดิมจะเห็นข้อมูลใหม่เพราะ `public_id` ไม่เปลี่ยน ส่วน Unpublish ทำให้ QR เดิม
-เปิดไม่ได้ชั่วคราว และ Delete ทำให้ลิงก์นั้นใช้ไม่ได้ถาวร
-
-## Color themes
-
-General Settings มี Theme Preset 15 แบบ แบ่งเป็น Romantic, Pastel, Night,
-Bright และ Warm พร้อมตัวกรองและปุ่มสุ่ม Theme โดย Configuration เก็บเฉพาะ
-`appearance.themeId` และใช้ `birthday-plum` เป็นค่าเริ่มต้นสำหรับ Draft เดิม
-
-Theme เปลี่ยนพื้นหลัง สีหลัก ปุ่ม ข้อความ Gradient เค้ก Quiz Gift Box และ
-Confetti ผ่าน CSS Tokens กลาง ส่วนสี Tier, สีลูกบอลที่กำหนดเอง, สถานะ Error
-และการ์ดรางวัลปลอบใจสีทองจะไม่ถูก Theme เขียนทับ เมื่อแก้ Draft ต้อง Republish
-ก่อน Public URL และ QR เดิมจึงจะแสดง Theme ใหม่
-
-## Consolation rewards
-
-Gift Settings รองรับรางวัลปลอบใจแบบ opt-in โดย Configuration เดิมจะปิด Feature
-นี้ไว้และใช้ Flow เดิม กำหนดกลุ่มรางวัลแต่ละลูกเป็น `grand`, `high`, `medium`
-หรือ `small` แล้วตั้งกฎสำเร็จรูปได้สองกฎ:
-
-1. ไม่ได้ Grand
-2. ไม่ได้ Grand, High และ Medium (Priority สูงกว่า)
-
-แต่ละกฎตั้งหัวข้อ ไอคอน และข้อความการ์ดปลอบใจได้ พร้อมเลือกให้ของขวัญพิเศษ,
-คูปองจับเพิ่ม หรือให้ผู้รับเลือกเองหนึ่งอย่าง ระบบตรวจเมื่อสิทธิ์ปัจจุบันหมด
-ให้เพียงกฎเดียวและให้แต่ละกฎทำงานครั้งเดียวต่อรอบ หากตั้งจับเพิ่ม
-มากกว่าลูกบอลที่เหลือ จะใช้จำนวนจริงตามสูตร:
-
-```text
-maximum extra picks in Settings = ball count - configured initial picks
-extra picks received at runtime = min(configured extra picks, unopened balls)
-```
-
-ตัวอย่าง ลูกบอล 20 ลูก เปิดแล้ว 8 ลูก เหลือ 12 ลูก แม้ตั้งสิทธิ์เพิ่มไว้ 20
-ผู้รับจะได้จับเพิ่มจริง 12 ครั้ง และลูกที่เปิดแล้วจะไม่ถูกเลือกซ้ำ
-
-ของขวัญปลอบใจเปิดด้วยกล่องของขวัญแบบแตะ 3 ครั้งหรือลากโบว์ และแสดง
-การ์ดสีทองในหน้าสรุป ส่วนรางวัลที่ได้จากสิทธิ์จับเพิ่มจะมีป้ายกำกับแหล่งที่มา
-
-### ลำดับดำเนินงานจากปัจจุบัน
-
-```text
-Phase 10: Supabase Foundation + Authentication
-                         ↓
-Phase 11: Cloud Draft + Dashboard
-                         ↓
-Phase 12: Publish + Public URL
-                         ↓
-Phase 13: QR Code + Share + Production Testing
-```
-
-Edge Function จะยังไม่ถูกเพิ่มใน Phase 10–13 หากภายหลังไม่มีฟีเจอร์ที่จำเป็นต้องใช้ Secret เช่น Payment, Transactional Email หรือการเชื่อมต่อบริการภายนอกแบบลับ
