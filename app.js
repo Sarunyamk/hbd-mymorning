@@ -36,6 +36,7 @@ function normalizeExperienceConfig(customConfig={}) {
     });
   }
   const config=mergeWithDefaults(window.DEFAULT_EXPERIENCE_CONFIG,source);
+  if(!window.EXPERIENCE_THEMES?.[config.appearance?.themeId])config.appearance.themeId='birthday-plum';
   const validQuestions=config.quiz.questions.filter(item=>
     item && typeof item.text==='string' && Array.isArray(item.answers) && item.answers.length>=2 &&
     Number.isInteger(item.correctAnswerIndex) && item.correctAnswerIndex>=0 && item.correctAnswerIndex<item.answers.length
@@ -56,12 +57,14 @@ function normalizeExperienceConfig(customConfig={}) {
 }
 
 let experienceConfig=normalizeExperienceConfig(window.EXPERIENCE_CONFIG||{});
+window.applyExperienceTheme?.(experienceConfig.appearance.themeId);
 let questions=experienceConfig.quiz.questions;
 let gifts=experienceConfig.giftBox.gifts;
 let colors=experienceConfig.giftBox.colors;
 
 function setRuntimeConfig(nextConfig) {
   experienceConfig=normalizeExperienceConfig(nextConfig);
+  window.applyExperienceTheme?.(experienceConfig.appearance.themeId);
   questions=experienceConfig.quiz.questions;
   gifts=experienceConfig.giftBox.gifts;
   colors=experienceConfig.giftBox.colors;
@@ -619,7 +622,8 @@ function renderSummary() {
 
 function celebrate(count=35) {
   const root=document.getElementById('confetti');
-  const palette=['#ff8fb8','#b9a7ff','#ffd88a','#92e6c5','#ffffff','#7dd7ff'];
+  const theme=window.getExperienceTheme?.(experienceConfig.appearance?.themeId);
+  const palette=theme?[...theme.colors,theme.tokens.accent,theme.tokens.mint,'#ffffff']:['#ff8fb8','#b9a7ff','#ffd88a','#92e6c5','#ffffff','#7dd7ff'];
   for(let i=0;i<count;i++){
     const c=document.createElement('i');
     c.style.left=Math.random()*100+'%';c.style.background=palette[i%palette.length];

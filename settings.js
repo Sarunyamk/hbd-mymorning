@@ -9,6 +9,7 @@ let saveTimer=null;
 let previewTimer=null;
 let avatarCommitTimer=null;
 let avatarDrag=null;
+let activeThemeCategory='all';
 
 function clone(value){return typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value));}
 function merge(defaultValue,customValue){
@@ -54,6 +55,10 @@ function migrateConfig(input){
       config.giftBox.consolation[ruleName]=rule;
     });
   }
+  if(version<5){
+    config.appearance=config.appearance||{};
+    config.appearance.themeId=config.appearance.themeId||'birthday-plum';
+  }
   config.schemaVersion=defaults.schemaVersion;return config;
 }
 function getPath(object,path){return path.split('.').reduce((value,key)=>value?.[key],object);}
@@ -64,6 +69,28 @@ function setPath(object,path,value){
 }
 function formatTemplate(value=''){
   return String(value).replaceAll('{name}',draftConfig.birthday.name||'').replaceAll('{age}',draftConfig.birthday.age||'');
+}
+
+function renderThemePicker(){
+  const categories=window.EXPERIENCE_THEME_CATEGORIES||{all:'ทั้งหมด'},themes=window.EXPERIENCE_THEMES||{};
+  const filters=document.getElementById('themeFilters'),grid=document.getElementById('themeGrid');
+  filters.innerHTML='';
+  Object.entries(categories).forEach(([id,label])=>{
+    const button=document.createElement('button');button.type='button';button.textContent=label;button.classList.toggle('active',id===activeThemeCategory);
+    button.addEventListener('click',()=>{activeThemeCategory=id;renderThemePicker();});filters.appendChild(button);
+  });
+  grid.innerHTML='';
+  Object.entries(themes).filter(([,theme])=>activeThemeCategory==='all'||theme.category===activeThemeCategory).forEach(([id,theme])=>{
+    const selected=draftConfig.appearance?.themeId===id,button=document.createElement('button');button.type='button';button.className=`theme-option${selected?' selected':''}`;button.setAttribute('role','radio');button.setAttribute('aria-checked',String(selected));
+    const preview=document.createElement('span');preview.className='theme-swatch';preview.style.background=`linear-gradient(135deg,${theme.colors.join(',')})`;
+    const copy=document.createElement('span');copy.className='theme-option-copy';const name=document.createElement('b');name.textContent=theme.name;const status=document.createElement('small');status.textContent=selected?'เลือกอยู่ ✓':categories[theme.category];copy.append(name,status);button.append(preview,copy);
+    button.addEventListener('click',()=>selectTheme(id));grid.appendChild(button);
+  });
+}
+function selectTheme(themeId){
+  if(!window.EXPERIENCE_THEMES?.[themeId])return;
+  draftConfig.appearance=draftConfig.appearance||{};draftConfig.appearance.themeId=themeId;
+  renderThemePicker();showValidation();scheduleSaveAndPreview();
 }
 
 function avatarEditorConfig(){
@@ -325,6 +352,7 @@ function renderForm(){
     if(input.type==='checkbox')input.checked=Boolean(value);
     else input.value=value??'';
   });
+  renderThemePicker();
   updateDerivedUi();
   syncAvatarControls();
   renderQuizBuilder();
@@ -418,7 +446,7 @@ function renderConfigurationReview(validation){
   status.innerHTML=`<b>${validation.valid?'พร้อมใช้งาน ✓':`ยังมี ${validation.errors.length} จุดที่ต้องแก้`}</b><span>${validation.valid?'Configuration ผ่าน Validation และพร้อม Preview':'กดรายการแจ้งเตือนด้านบนเพื่อไปยังช่องที่ต้องแก้'}</span>`;
   const sizeBytes=new Blob([JSON.stringify(draftConfig)]).size;
   const metrics=[
-    [draftConfig.quiz.questions.length,'คำถาม'],[draftConfig.giftBox.ballCount,'ลูกบอล'],[draftConfig.memories.items.length,'Memories'],[`${Math.max(1,Math.round(sizeBytes/1024))} KB`,'ขนาด Draft'],[draftConfig.features.quizEnabled?'เปิด':'ปิด','Quiz'],[draftConfig.features.memoriesEnabled?'เปิด':'ปิด','Memories']
+    [window.getExperienceTheme?.(draftConfig.appearance?.themeId)?.name||'Birthday Plum','Theme'],[draftConfig.quiz.questions.length,'คำถาม'],[draftConfig.giftBox.ballCount,'ลูกบอล'],[draftConfig.memories.items.length,'Memories'],[`${Math.max(1,Math.round(sizeBytes/1024))} KB`,'ขนาด Draft'],[draftConfig.features.quizEnabled?'เปิด':'ปิด','Quiz'],[draftConfig.features.memoriesEnabled?'เปิด':'ปิด','Memories']
   ];
   const grid=document.getElementById('reviewGrid');grid.innerHTML='';metrics.forEach(([value,label])=>{const item=document.createElement('div');item.className='review-metric';item.innerHTML=`<b>${value}</b><span>${label}</span>`;grid.appendChild(item);});
   const steps=['Intro','Cake','Card'];if(draftConfig.features.quizEnabled)steps.push('Quiz');steps.push('Gift Box','Summary','Final');if(draftConfig.features.memoriesEnabled)steps.push('Memories');
@@ -474,6 +502,11 @@ form.addEventListener('input',event=>{
   if(input.type==='number'||input.type==='range')value=Number(value);
   setPath(draftConfig,input.dataset.path,value);
   updateDerivedUi();showValidation();scheduleSaveAndPreview();
+});
+
+document.getElementById('randomThemeBtn').addEventListener('click',()=>{
+  const ids=Object.keys(window.EXPERIENCE_THEMES||{}).filter(id=>id!==draftConfig.appearance?.themeId);
+  if(ids.length)selectTheme(ids[Math.floor(Math.random()*ids.length)]);
 });
 
 document.getElementById('questionCount').addEventListener('change',event=>setQuestionCount(event.target.value));
@@ -666,7 +699,7 @@ window.addEventListener('message',event=>{
 function resetSection(section){
   if(!confirm(`คืนค่าเฉพาะ Section “${section}” เป็น Default?`))return;
   if(section==='general'){
-    draftConfig.birthday.name=defaults.birthday.name;draftConfig.birthday.age=defaults.birthday.age;draftConfig.birthday.introIcon=defaults.birthday.introIcon;draftConfig.birthday.introLead=defaults.birthday.introLead;draftConfig.features=clone(defaults.features);
+    draftConfig.birthday.name=defaults.birthday.name;draftConfig.birthday.age=defaults.birthday.age;draftConfig.birthday.introIcon=defaults.birthday.introIcon;draftConfig.birthday.introLead=defaults.birthday.introLead;draftConfig.features=clone(defaults.features);draftConfig.appearance=clone(defaults.appearance);
   }
   if(section==='cake')draftConfig.cake=clone(defaults.cake);
   if(section==='card')draftConfig.birthday.card=clone(defaults.birthday.card);

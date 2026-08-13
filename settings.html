@@ -71,6 +71,15 @@
                 <p>ข้อมูลหลักและเส้นทางของ Experience</p>
               </div>
             </div>
+            <div class="theme-picker-block">
+              <div class="theme-picker-heading">
+                <div><b>Color Theme</b><span>เลือกโทนสีสำหรับ Birthday Experience ทั้งหมด</span></div>
+                <button type="button" id="randomThemeBtn">สุ่ม Theme ✨</button>
+              </div>
+              <div class="theme-filters" id="themeFilters" aria-label="หมวดหมู่ Theme"></div>
+              <div class="theme-grid" id="themeGrid" role="radiogroup" aria-label="เลือก Color Theme"></div>
+              <em class="collection-error" data-error="appearance.themeId"></em>
+            </div>
             <div class="field-grid two-columns">
               <label class="field"
                 ><span>ชื่อเจ้าของวันเกิด</span
@@ -471,6 +480,7 @@
       </aside>
     </main>
 
+    <script src="theme-presets.js"></script>
     <script src="default-config.js"></script>
     <script src="config-validator.js"></script>
     <script src="settings.js"></script>

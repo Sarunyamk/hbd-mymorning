@@ -12,6 +12,7 @@ function copyLegacyRuntime() {
       mkdirSync(outputRoot, { recursive: true });
       [
         'default-config.js',
+        'theme-presets.js',
         'config-validator.js',
         'app.js',
         'settings.js',

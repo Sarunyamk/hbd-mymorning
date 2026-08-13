@@ -1,5 +1,8 @@
 const DEFAULT_EXPERIENCE_CONFIG = {
-  schemaVersion: 4,
+  schemaVersion: 5,
+  appearance: {
+    themeId: 'birthday-plum',
+  },
   birthday: {
     name: 'You',
     age: 30,

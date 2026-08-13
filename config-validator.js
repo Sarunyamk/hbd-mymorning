@@ -348,6 +348,10 @@ function validateExperienceConfig(config) {
       addWarning('giftBox.gifts', 'NO_TOP_TIERS', 'ยังไม่มี Grand, High หรือ Medium กฎที่ 2 จะตรงทุกครั้ง');
   }
 
+  const themeId=text(config.appearance?.themeId||'birthday-plum');
+  if(!window.EXPERIENCE_THEMES?.[themeId])
+    addError('appearance.themeId','INVALID_THEME','กรุณาเลือก Color Theme ที่มีอยู่ในระบบ');
+
   const memoriesEnabled = config.features?.memoriesEnabled !== false;
   const memories = Array.isArray(config.memories?.items)
     ? config.memories.items

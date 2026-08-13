@@ -388,6 +388,17 @@ Public URL และใช้ Error Correction ระดับ `H` เพื่�
 QR เดิมจะเห็นข้อมูลใหม่เพราะ `public_id` ไม่เปลี่ยน ส่วน Unpublish ทำให้ QR เดิม
 เปิดไม่ได้ชั่วคราว และ Delete ทำให้ลิงก์นั้นใช้ไม่ได้ถาวร
 
+## Color themes
+
+General Settings มี Theme Preset 15 แบบ แบ่งเป็น Romantic, Pastel, Night,
+Bright และ Warm พร้อมตัวกรองและปุ่มสุ่ม Theme โดย Configuration เก็บเฉพาะ
+`appearance.themeId` และใช้ `birthday-plum` เป็นค่าเริ่มต้นสำหรับ Draft เดิม
+
+Theme เปลี่ยนพื้นหลัง สีหลัก ปุ่ม ข้อความ Gradient เค้ก Quiz Gift Box และ
+Confetti ผ่าน CSS Tokens กลาง ส่วนสี Tier, สีลูกบอลที่กำหนดเอง, สถานะ Error
+และการ์ดรางวัลปลอบใจสีทองจะไม่ถูก Theme เขียนทับ เมื่อแก้ Draft ต้อง Republish
+ก่อน Public URL และ QR เดิมจึงจะแสดง Theme ใหม่
+
 ## Consolation rewards
 
 Gift Settings รองรับรางวัลปลอบใจแบบ opt-in โดย Configuration เดิมจะปิด Feature
