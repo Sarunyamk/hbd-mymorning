@@ -1,5 +1,5 @@
 const DEFAULT_EXPERIENCE_CONFIG = {
-  schemaVersion: 5,
+  schemaVersion: 6,
   appearance: {
     themeId: 'birthday-plum',
   },
@@ -141,6 +141,20 @@ const DEFAULT_EXPERIENCE_CONFIG = {
   giftBox: {
     ballCount: 20,
     pickLimitWithoutQuiz: 8,
+    guaranteedGifts: {
+      enabled: false,
+      cardTitle: 'ยังมีของขวัญพิเศษอีกนะ',
+      cardMessage: 'ของขวัญเหล่านี้เตรียมไว้ให้คุณโดยเฉพาะ',
+      cardIcon: '💝',
+      items: [
+        {
+          id: 'guaranteed-1',
+          name: 'ของขวัญพิเศษ',
+          icon: '🎁',
+          description: 'ของขวัญที่ตั้งใจเตรียมไว้ให้คุณ',
+        },
+      ],
+    },
     consolation: {
       enabled: false,
       noGrand: {

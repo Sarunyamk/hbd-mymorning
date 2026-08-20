@@ -59,6 +59,10 @@ function migrateConfig(input){
     config.appearance=config.appearance||{};
     config.appearance.themeId=config.appearance.themeId||'birthday-plum';
   }
+  if(version<6){
+    config.giftBox=config.giftBox||{};
+    config.giftBox.guaranteedGifts=config.giftBox.guaranteedGifts||clone(defaults.giftBox.guaranteedGifts);
+  }
   config.schemaVersion=defaults.schemaVersion;return config;
 }
 function getPath(object,path){return path.split('.').reduce((value,key)=>value?.[key],object);}
@@ -192,6 +196,19 @@ function giftColor(gift,index){
 function createGift(index){
   return {id:`g-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name:'',icon:'🎁',description:'',rarity:'normal',tier:'small',color:giftColor(null,index)};
 }
+
+function createGuaranteedGift(){return {id:`guaranteed-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name:'',icon:'🎁',description:''};}
+function renderGuaranteedGiftBuilder(openIndex){
+  const root=document.getElementById('guaranteedGiftEditorList'),items=draftConfig.giftBox.guaranteedGifts.items;root.innerHTML='';
+  document.getElementById('guaranteedGiftCount').value=items.length;document.getElementById('removeGuaranteedGiftBtn').disabled=items.length<=1;document.getElementById('addGuaranteedGiftBtn').disabled=items.length>=EXPERIENCE_LIMITS.guaranteedGiftMax;document.getElementById('appendGuaranteedGiftBtn').disabled=items.length>=EXPERIENCE_LIMITS.guaranteedGiftMax;
+  items.forEach((gift,index)=>{
+    const card=document.createElement('details');card.className='gift-editor-card guaranteed-gift-card';card.dataset.guaranteedIndex=index;card.open=index===openIndex||openIndex===undefined&&index===0;
+    const summary=document.createElement('summary');summary.innerHTML='<span class="gift-ball-preview"></span><span class="gift-summary-copy"><b></b><span></span></span><span class="gift-rarity-pill special">guaranteed</span><span class="question-chevron">⌄</span>';summary.querySelector('.gift-ball-preview').textContent=gift.icon||'🎁';summary.querySelector('b').textContent=gift.name.trim()||`รางวัลพิเศษที่ ${index+1}`;summary.querySelector('.gift-summary-copy span').textContent=gift.description.trim()||'ยังไม่มีรายละเอียด';
+    const body=document.createElement('div');body.className='gift-editor-body';body.innerHTML=`<div class="field-grid two-columns"><label class="field"><span>ชื่อรางวัลพิเศษ</span><input data-guaranteed-field="name" maxlength="${EXPERIENCE_LIMITS.giftName}"><em data-error="giftBox.guaranteedGifts.items.${index}.name"></em></label><label class="field"><span>ไอคอน</span><input data-guaranteed-field="icon" maxlength="${EXPERIENCE_LIMITS.giftIcon}"><em data-error="giftBox.guaranteedGifts.items.${index}.icon"></em></label></div><label class="field"><span>รายละเอียด</span><textarea rows="2" data-guaranteed-field="description" maxlength="${EXPERIENCE_LIMITS.giftDescription}"></textarea><em data-error="giftBox.guaranteedGifts.items.${index}.description"></em></label><div class="gift-card-tools"><button type="button" data-guaranteed-action="move-up" ${index===0?'disabled':''}>↑ ขึ้น</button><button type="button" data-guaranteed-action="move-down" ${index===items.length-1?'disabled':''}>↓ ลง</button><button type="button" data-guaranteed-action="duplicate" ${items.length>=EXPERIENCE_LIMITS.guaranteedGiftMax?'disabled':''}>ทำสำเนา</button><button type="button" class="remove-gift" data-guaranteed-action="remove" ${items.length<=1?'disabled':''}>ลบ</button></div>`;
+    body.querySelector('[data-guaranteed-field="name"]').value=gift.name;body.querySelector('[data-guaranteed-field="icon"]').value=gift.icon;body.querySelector('[data-guaranteed-field="description"]').value=gift.description;card.append(summary,body);root.appendChild(card);
+  });
+}
+function setGuaranteedGiftCount(value){const items=draftConfig.giftBox.guaranteedGifts.items,target=Math.max(1,Math.min(EXPERIENCE_LIMITS.guaranteedGiftMax,Number(value)||items.length));if(target<items.length&&!confirm(`ลดเหลือ ${target} รางวัลพิเศษ? รางวัลท้ายชุดจะหายไป`)){document.getElementById('guaranteedGiftCount').value=items.length;return;}while(items.length<target)items.push(createGuaranteedGift());items.splice(target);renderGuaranteedGiftBuilder(target-1);showValidation();scheduleSaveAndPreview();}
 
 function renderGiftBuilder(openIndex){
   const list=document.getElementById('giftEditorList');
@@ -357,6 +374,7 @@ function renderForm(){
   syncAvatarControls();
   renderQuizBuilder();
   renderGiftBuilder();
+  renderGuaranteedGiftBuilder();
   renderMemoryBuilder();
   showValidation();
 }
@@ -391,6 +409,7 @@ function updateDerivedUi(){
   document.getElementById('memoryBuilderContent').classList.toggle('memory-builder-off',!memoriesEnabled);
   document.querySelector('[data-tab="memories"]').classList.toggle('feature-off',!memoriesEnabled);
   const consolation=draftConfig.giftBox.consolation;
+  document.getElementById('guaranteedGiftFields').classList.toggle('consolation-off',!draftConfig.giftBox.guaranteedGifts.enabled);
   const initialGiftPicks=Math.min(availableBalls,Math.max(1,Number(draftConfig.giftBox.pickLimitWithoutQuiz)||1));
   const maximumExtraPicks=Math.max(0,availableBalls-initialGiftPicks);
   document.getElementById('consolationRules').classList.toggle('consolation-off',!consolation.enabled);
@@ -427,10 +446,10 @@ function ensureTabBadges(){
 }
 function focusValidationError(error){
   const tab=tabForPath(error.path);openSettingsTab(tab);
-  const dynamic=error.path.match(/^(quiz\.questions|giftBox\.gifts|memories\.items)\.(\d+)/);
+  const dynamic=error.path.match(/^(quiz\.questions|giftBox\.gifts|giftBox\.guaranteedGifts\.items|memories\.items)\.(\d+)/);
   if(dynamic){
     const selectors={
-      'quiz.questions':'.question-card','giftBox.gifts':'.gift-editor-card','memories.items':'.memory-editor-card'
+      'quiz.questions':'.question-card','giftBox.gifts':'#giftEditorList .gift-editor-card','giftBox.guaranteedGifts.items':'.guaranteed-gift-card','memories.items':'.memory-editor-card'
     };
     const card=document.querySelectorAll(selectors[dynamic[1]])[Number(dynamic[2])];if(card)card.open=true;
   }
@@ -555,6 +574,20 @@ document.getElementById('giftCount').addEventListener('change',event=>setGiftCou
 document.getElementById('addGiftBtn').addEventListener('click',()=>setGiftCount(draftConfig.giftBox.gifts.length+1));
 document.getElementById('removeGiftBtn').addEventListener('click',()=>setGiftCount(draftConfig.giftBox.gifts.length-1));
 document.getElementById('appendGiftBtn').addEventListener('click',()=>setGiftCount(draftConfig.giftBox.gifts.length+1));
+document.getElementById('guaranteedGiftCount').addEventListener('change',event=>setGuaranteedGiftCount(event.target.value));
+document.getElementById('addGuaranteedGiftBtn').addEventListener('click',()=>setGuaranteedGiftCount(draftConfig.giftBox.guaranteedGifts.items.length+1));
+document.getElementById('removeGuaranteedGiftBtn').addEventListener('click',()=>setGuaranteedGiftCount(draftConfig.giftBox.guaranteedGifts.items.length-1));
+document.getElementById('appendGuaranteedGiftBtn').addEventListener('click',()=>setGuaranteedGiftCount(draftConfig.giftBox.guaranteedGifts.items.length+1));
+document.getElementById('guaranteedGiftEditorList').addEventListener('input',event=>{
+  const input=event.target.closest('[data-guaranteed-field]'),card=input?.closest('.guaranteed-gift-card');if(!input||!card)return;
+  const index=Number(card.dataset.guaranteedIndex),gift=draftConfig.giftBox.guaranteedGifts.items[index];gift[input.dataset.guaranteedField]=input.value;
+  card.querySelector('.gift-ball-preview').textContent=gift.icon||'🎁';card.querySelector('.gift-summary-copy b').textContent=gift.name.trim()||`รางวัลพิเศษที่ ${index+1}`;card.querySelector('.gift-summary-copy span').textContent=gift.description.trim()||'ยังไม่มีรายละเอียด';showValidation();scheduleSaveAndPreview();
+});
+document.getElementById('guaranteedGiftEditorList').addEventListener('click',event=>{
+  const button=event.target.closest('[data-guaranteed-action]');if(!button)return;const card=button.closest('.guaranteed-gift-card'),index=Number(card.dataset.guaranteedIndex),items=draftConfig.giftBox.guaranteedGifts.items,action=button.dataset.guaranteedAction;
+  if(action==='move-up'&&index>0)[items[index-1],items[index]]=[items[index],items[index-1]];else if(action==='move-down'&&index<items.length-1)[items[index+1],items[index]]=[items[index],items[index+1]];else if(action==='duplicate'&&items.length<EXPERIENCE_LIMITS.guaranteedGiftMax){const copy=clone(items[index]);copy.id=`guaranteed-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;items.splice(index+1,0,copy);}else if(action==='remove'&&items.length>1){if(!confirm(`ลบรางวัลพิเศษที่ ${index+1}?`))return;items.splice(index,1);}else return;
+  const next=action==='move-up'?index-1:action==='move-down'?index+1:action==='duplicate'?index+1:Math.min(index,items.length-1);renderGuaranteedGiftBuilder(next);showValidation();scheduleSaveAndPreview();
+});
 function updateGiftCardSummary(card,gift,index){
   const ball=card.querySelector('.gift-ball-preview');ball.textContent=gift.icon||'🎁';ball.style.background=giftColor(gift,index);
   card.querySelector('.gift-summary-copy b').textContent=gift.name.trim()||`ของรางวัลลูกที่ ${index+1}`;

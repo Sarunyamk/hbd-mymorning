@@ -26,6 +26,9 @@ const state = {
   consolationUnwrapCount: 0,
   consolationUnwrapDone: false,
   consolationBowDrag: null,
+  guaranteedGiftIndex: 0,
+  guaranteedGiftTapCount: 0,
+  guaranteedGiftsCompleted: false,
 };
 
 const MIC_CONFIG = {
@@ -106,6 +109,9 @@ function normalizeExperienceConfig(customConfig = {}) {
             ? 'high'
             : 'small';
   });
+  config.giftBox.guaranteedGifts.items = config.giftBox.guaranteedGifts.items
+    .filter((item) => item && item.name && item.description)
+    .slice(0, 10);
   const minimumBallCount = Math.min(10, config.giftBox.gifts.length);
   config.giftBox.ballCount = Math.min(
     25,
@@ -680,6 +686,9 @@ function enterGift(requestedPicks) {
   state.consolationApplied = false;
   state.consolationReward = null;
   state.extraPickActive = false;
+  state.guaranteedGiftIndex = 0;
+  state.guaranteedGiftTapCount = 0;
+  state.guaranteedGiftsCompleted = false;
   document.getElementById('pickLimit').textContent = state.picks;
   document.getElementById('pickUsed').textContent = 0;
   const box = document.getElementById('giftbox');
@@ -870,13 +879,38 @@ function finishGiftRound() {
     setTimeout(() => showConsolation(rule), 550);
     return;
   }
-  document.getElementById('giftHint').textContent =
-    `เลือกครบ ${state.picks} ลูกแล้ว! มาดูของขวัญทั้งหมดกัน 🎉`;
-  setTimeout(() => {
-    renderSummary();
-    showScene('summary');
-    celebrate(50);
-  }, 900);
+  document.getElementById('giftHint').textContent = `เลือกครบ ${state.picks} ลูกแล้ว! 🎉`;
+  setTimeout(continueAfterGiftRewards, 900);
+}
+
+function continueAfterGiftRewards() {
+  const config = experienceConfig.giftBox.guaranteedGifts;
+  if (config?.enabled && config.items?.length && !state.guaranteedGiftsCompleted) {
+    startGuaranteedGifts();
+    return;
+  }
+  renderSummary();showScene('summary');celebrate(50);
+}
+
+function startGuaranteedGifts() {
+  const config=experienceConfig.giftBox.guaranteedGifts;state.guaranteedGiftIndex=0;state.guaranteedGiftTapCount=0;
+  document.getElementById('guaranteedGiftCardIcon').textContent=config.cardIcon||'💝';document.getElementById('guaranteedGiftCardTitle').textContent=config.cardTitle;document.getElementById('guaranteedGiftCardMessage').textContent=config.cardMessage;
+  document.getElementById('guaranteedGiftIntro').hidden=false;document.getElementById('guaranteedGiftUnwrap').hidden=true;document.getElementById('guaranteedGiftResult').hidden=true;document.getElementById('guaranteedGiftOverlay').classList.add('show');celebrate(60);
+}
+function openNextGuaranteedGift(){
+  const items=experienceConfig.giftBox.guaranteedGifts.items,index=state.guaranteedGiftIndex;state.guaranteedGiftTapCount=0;
+  const box=document.getElementById('guaranteedGiftBox');box.className='consolation-gift-box';document.getElementById('guaranteedGiftProgress').textContent=`รางวัลพิเศษ ${index+1} / ${items.length}`;document.getElementById('guaranteedGiftHint').textContent='แตะกล่อง 3 ครั้งเพื่อแกะ 🎀';document.getElementById('guaranteedGiftIntro').hidden=true;document.getElementById('guaranteedGiftResult').hidden=true;document.getElementById('guaranteedGiftUnwrap').hidden=false;
+}
+function tapGuaranteedGift(){
+  if(state.guaranteedGiftTapCount>=3)return;state.guaranteedGiftTapCount++;const box=document.getElementById('guaranteedGiftBox');box.classList.add(`tap-${state.guaranteedGiftTapCount}`);const left=3-state.guaranteedGiftTapCount;document.getElementById('guaranteedGiftHint').textContent=left?`แตะอีก ${left} ครั้งเพื่อแกะของขวัญ ✨`:'เปิดแล้ว! 🎉';tone(260+state.guaranteedGiftTapCount*100,.1,.035);if(!left)revealGuaranteedGift();
+}
+function revealGuaranteedGift(){
+  const gift=experienceConfig.giftBox.guaranteedGifts.items[state.guaranteedGiftIndex];document.getElementById('guaranteedGiftBox').classList.add('opened');setTimeout(()=>{document.getElementById('guaranteedGiftUnwrap').hidden=true;document.getElementById('guaranteedGiftResult').hidden=false;document.getElementById('guaranteedGiftResultIcon').textContent=gift.icon;document.getElementById('guaranteedGiftResultName').textContent=gift.name;document.getElementById('guaranteedGiftResultDescription').textContent=gift.description;const last=state.guaranteedGiftIndex===experienceConfig.giftBox.guaranteedGifts.items.length-1;document.getElementById('keepGuaranteedGiftBtn').textContent=last?'เก็บรางวัลและดูทั้งหมด ✨':'เก็บรางวัลและเปิดชิ้นต่อไป 🎁';celebrate(80);},650);
+}
+function keepGuaranteedGift(){
+  const gift=experienceConfig.giftBox.guaranteedGifts.items[state.guaranteedGiftIndex];state.gifts.push({...cloneValue(gift),rarity:'special',tier:'bonus',guaranteed:true,source:'guaranteed-gift'});state.guaranteedGiftIndex++;
+  if(state.guaranteedGiftIndex<experienceConfig.giftBox.guaranteedGifts.items.length){openNextGuaranteedGift();return;}
+  state.guaranteedGiftsCompleted=true;document.getElementById('guaranteedGiftOverlay').classList.remove('show');continueAfterGiftRewards();
 }
 
 function showConsolation(rule) {
@@ -1018,9 +1052,7 @@ function keepConsolationGift() {
   state.gifts.push(bonus);
   state.consolationReward = null;
   document.getElementById('consolationUnwrapOverlay').classList.remove('show');
-  renderSummary();
-  showScene('summary');
-  celebrate(50);
+  continueAfterGiftRewards();
 }
 
 function openFinalSurprise(button) {
@@ -1042,7 +1074,7 @@ function renderSummary() {
   list.forEach((g, i) => {
     const d = document.createElement('div');
     d.className =
-      `gift-mini ${g.consolation || g.source === 'consolation-extra-pick' ? 'consolation-summary-gift' : ''}`.trim();
+      `gift-mini ${g.consolation || g.source === 'consolation-extra-pick' ? 'consolation-summary-gift' : ''} ${g.guaranteed ? 'guaranteed-summary-gift' : ''}`.trim();
     d.style.animationDelay = i * 0.06 + 's';
     const icon = document.createElement('div');
     icon.className = 'emoji';
@@ -1064,6 +1096,7 @@ function renderSummary() {
         : '🎟️ จากสิทธิ์ปลอบใจ';
       d.prepend(badge);
     }
+    if(g.guaranteed){const badge=document.createElement('b');badge.className='consolation-summary-badge guaranteed-summary-badge';badge.textContent='💝 ของขวัญพิเศษ';d.prepend(badge);}
     root.appendChild(d);
   });
 }
@@ -1104,8 +1137,12 @@ function restartExperience() {
   state.extraPickActive = false;
   state.consolationUnwrapDone = false;
   state.consolationBowDrag = null;
+  state.guaranteedGiftIndex = 0;
+  state.guaranteedGiftTapCount = 0;
+  state.guaranteedGiftsCompleted = false;
   document.getElementById('consolationOverlay').classList.remove('show');
   document.getElementById('consolationUnwrapOverlay').classList.remove('show');
+  document.getElementById('guaranteedGiftOverlay').classList.remove('show');
   renderCandles();
   setBlowMeter(0);
   document.getElementById('blowStatus').textContent = '';

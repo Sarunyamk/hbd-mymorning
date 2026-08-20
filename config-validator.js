@@ -20,6 +20,7 @@ const EXPERIENCE_LIMITS = Object.freeze({
   giftName: 40,
   giftIcon: 8,
   giftDescription: 100,
+  guaranteedGiftMax: 10,
   consolationCardTitle: 30,
   consolationCardMessage: 120,
   consolationCardIcon: 8,
@@ -303,6 +304,37 @@ function validateExperienceConfig(config) {
       'OUT_OF_RANGE',
       'จำนวนสิทธิ์เลือกของขวัญต้องอยู่ระหว่าง 1 ถึงจำนวนลูกบอล'
     );
+
+  const guaranteedGifts = config.giftBox?.guaranteedGifts;
+  if (guaranteedGifts?.enabled) {
+    const base = 'giftBox.guaranteedGifts';
+    const items = Array.isArray(guaranteedGifts.items)
+      ? guaranteedGifts.items
+      : [];
+    if (!text(guaranteedGifts.cardTitle))
+      addError(`${base}.cardTitle`, 'REQUIRED', 'กรุณากรอกหัวข้อการ์ดรางวัลพิเศษ');
+    else if (text(guaranteedGifts.cardTitle).length > EXPERIENCE_LIMITS.consolationCardTitle)
+      addError(`${base}.cardTitle`, 'TEXT_TOO_LONG', `หัวข้อต้องไม่เกิน ${EXPERIENCE_LIMITS.consolationCardTitle} ตัวอักษร`);
+    if (!text(guaranteedGifts.cardMessage))
+      addError(`${base}.cardMessage`, 'REQUIRED', 'กรุณากรอกข้อความรางวัลพิเศษ');
+    else if (text(guaranteedGifts.cardMessage).length > EXPERIENCE_LIMITS.consolationCardMessage)
+      addError(`${base}.cardMessage`, 'TEXT_TOO_LONG', `ข้อความต้องไม่เกิน ${EXPERIENCE_LIMITS.consolationCardMessage} ตัวอักษร`);
+    if (!text(guaranteedGifts.cardIcon))
+      addError(`${base}.cardIcon`, 'REQUIRED', 'กรุณากรอกไอคอนการ์ด');
+    else if (text(guaranteedGifts.cardIcon).length > EXPERIENCE_LIMITS.consolationCardIcon)
+      addError(`${base}.cardIcon`, 'TEXT_TOO_LONG', `ไอคอนต้องไม่เกิน ${EXPERIENCE_LIMITS.consolationCardIcon} ตัวอักษร`);
+    if (items.length < 1 || items.length > EXPERIENCE_LIMITS.guaranteedGiftMax)
+      addError(`${base}.items`, 'COUNT_OUT_OF_RANGE', `รางวัลพิเศษต้องมี 1–${EXPERIENCE_LIMITS.guaranteedGiftMax} รางวัล`);
+    items.forEach((gift, index) => {
+      const itemBase = `${base}.items.${index}`;
+      if (!text(gift?.name)) addError(`${itemBase}.name`, 'REQUIRED', `รางวัลพิเศษที่ ${index + 1} ยังไม่มีชื่อ`);
+      else if (text(gift.name).length > EXPERIENCE_LIMITS.giftName) addError(`${itemBase}.name`, 'TEXT_TOO_LONG', `ชื่อต้องไม่เกิน ${EXPERIENCE_LIMITS.giftName} ตัวอักษร`);
+      if (!text(gift?.icon)) addError(`${itemBase}.icon`, 'REQUIRED', `รางวัลพิเศษที่ ${index + 1} ยังไม่มีไอคอน`);
+      else if (text(gift.icon).length > EXPERIENCE_LIMITS.giftIcon) addError(`${itemBase}.icon`, 'TEXT_TOO_LONG', `ไอคอนต้องไม่เกิน ${EXPERIENCE_LIMITS.giftIcon} ตัวอักษร`);
+      if (!text(gift?.description)) addError(`${itemBase}.description`, 'REQUIRED', `รางวัลพิเศษที่ ${index + 1} ยังไม่มีรายละเอียด`);
+      else if (text(gift.description).length > EXPERIENCE_LIMITS.giftDescription) addError(`${itemBase}.description`, 'TEXT_TOO_LONG', `รายละเอียดต้องไม่เกิน ${EXPERIENCE_LIMITS.giftDescription} ตัวอักษร`);
+    });
+  }
 
   const consolation = config.giftBox?.consolation;
   if (consolation?.enabled) {

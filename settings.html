@@ -356,6 +356,15 @@
             <em class="collection-error" data-error="giftBox.gifts"></em>
             <div class="gift-editor-list" id="giftEditorList"></div>
             <button class="gift-add-button" id="appendGiftBtn" type="button">＋ เพิ่มลูกบอลและของรางวัล</button>
+            <div class="guaranteed-gift-builder">
+              <label class="toggle-card"><div><b>รางวัลพิเศษที่ได้แน่นอน</b><span>มอบให้หลังจบการจับรางวัลและรางวัลปลอบใจ • ไม่ขึ้นกับผลการสุ่ม</span></div><span class="switch"><input type="checkbox" data-path="giftBox.guaranteedGifts.enabled"><i></i></span></label>
+              <div id="guaranteedGiftFields">
+                <div class="field-grid two-columns"><label class="field"><span>หัวข้อการ์ด</span><input data-path="giftBox.guaranteedGifts.cardTitle" maxlength="30"><small class="counter" data-counter="giftBox.guaranteedGifts.cardTitle"></small><em data-error="giftBox.guaranteedGifts.cardTitle"></em></label><label class="field"><span>ไอคอนการ์ด</span><input data-path="giftBox.guaranteedGifts.cardIcon" maxlength="8"><small class="counter" data-counter="giftBox.guaranteedGifts.cardIcon"></small><em data-error="giftBox.guaranteedGifts.cardIcon"></em></label></div>
+                <label class="field"><span>ข้อความก่อนเปิดรางวัล</span><textarea data-path="giftBox.guaranteedGifts.cardMessage" maxlength="120" rows="2"></textarea><small class="counter" data-counter="giftBox.guaranteedGifts.cardMessage"></small><em data-error="giftBox.guaranteedGifts.cardMessage"></em></label>
+                <div class="gift-builder-toolbar"><div><b>จำนวนรางวัลพิเศษ</b><span>ผู้รับจะได้รับทุกรางวัลตามลำดับ</span></div><div class="count-stepper"><button type="button" id="removeGuaranteedGiftBtn">−</button><input id="guaranteedGiftCount" type="number" min="1" max="10"><button type="button" id="addGuaranteedGiftBtn">+</button></div></div>
+                <em class="collection-error" data-error="giftBox.guaranteedGifts.items"></em><div class="gift-editor-list" id="guaranteedGiftEditorList"></div><button class="gift-add-button" id="appendGuaranteedGiftBtn" type="button">＋ เพิ่มรางวัลพิเศษ</button>
+              </div>
+            </div>
             <div class="consolation-builder">
               <label class="toggle-card consolation-master"><div><b>รางวัลปลอบใจ</b><span>ตรวจหนึ่งครั้งหลังใช้สิทธิ์ปัจจุบันครบ • ปิดไว้จะใช้ Flow เดิม</span></div><span class="switch"><input type="checkbox" data-path="giftBox.consolation.enabled"><i></i></span></label>
               <div id="consolationRules">
