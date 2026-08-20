@@ -339,8 +339,8 @@
                 </div>
                 <div id="guaranteedGiftUnwrap" hidden>
                   <span class="rarity special" id="guaranteedGiftProgress"></span>
-                  <button class="consolation-gift-box" id="guaranteedGiftBox" onclick="tapGuaranteedGift()" aria-label="แตะกล่องเพื่อเปิดของขวัญพิเศษ"><span class="consolation-box-lid"></span><span class="consolation-box-body"></span><span class="consolation-bow">🎀</span></button>
-                  <p id="guaranteedGiftHint">แตะกล่อง 3 ครั้งเพื่อแกะ 🎀</p>
+                  <button class="consolation-gift-box" id="guaranteedGiftBox" onclick="tapGuaranteedGift()" aria-label="แตะกล่องหรือลากโบว์เพื่อเปิดของขวัญพิเศษ"><span class="consolation-box-lid"></span><span class="consolation-box-body"></span><span class="consolation-bow" onpointerdown="startGuaranteedBowDrag(event)" onpointermove="moveGuaranteedBowDrag(event)" onpointerup="endGuaranteedBowDrag(event)" onpointercancel="endGuaranteedBowDrag(event)">🎀</span><span class="guaranteed-heart-burst" id="guaranteedHeartBurst" aria-hidden="true"></span></button>
+                  <p id="guaranteedGiftHint">แตะกล่อง 3 ครั้ง หรือลากโบว์ออกเพื่อแกะ 🎀</p>
                 </div>
                 <div id="guaranteedGiftResult" hidden>
                   <span class="rarity special">รางวัลพิเศษ</span><div class="consolation-icon" id="guaranteedGiftResultIcon">🎁</div>
