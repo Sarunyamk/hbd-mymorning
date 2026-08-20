@@ -10,6 +10,8 @@ const state = {
   music: true,
   audioCtx: null,
   melodyTimer: null,
+  birthdaySpeechTimer: null,
+  birthdaySpoken: false,
   micStream: null,
   micSource: null,
   analyser: null,
@@ -388,6 +390,35 @@ function playBirthdayPhrase() {
     tone(f, i % 6 === 5 ? 0.42 : 0.24, 0.035, t);
     t += i % 6 === 5 ? 0.46 : 0.27;
   });
+  scheduleBirthdayGreeting();
+}
+function scheduleBirthdayGreeting() {
+  if (
+    state.birthdaySpoken ||
+    state.birthdaySpeechTimer ||
+    !state.music ||
+    !('speechSynthesis' in window)
+  )
+    return;
+  state.birthdaySpeechTimer = setTimeout(() => {
+    state.birthdaySpeechTimer = null;
+    if (!state.music || state.birthdaySpoken) return;
+    const name = String(experienceConfig.birthday?.name || '').trim();
+    const greeting = new SpeechSynthesisUtterance(
+      `Happy Birthday${name ? `, ${name}` : ''}!`
+    );
+    greeting.lang = 'en-US';
+    greeting.rate = 0.88;
+    greeting.pitch = 1.08;
+    greeting.volume = 0.82;
+    const voices = window.speechSynthesis.getVoices();
+    greeting.voice =
+      voices.find((voice) => /^en-(US|GB)/i.test(voice.lang)) ||
+      voices.find((voice) => /^en/i.test(voice.lang)) ||
+      null;
+    state.birthdaySpoken = true;
+    window.speechSynthesis.speak(greeting);
+  }, 3550);
 }
 function playBirthdayLoop() {
   clearInterval(state.melodyTimer);
@@ -404,6 +435,10 @@ function toggleMusic() {
   if (state.music) {
     ensureAudio();
     playBirthdayPhrase();
+  } else {
+    clearTimeout(state.birthdaySpeechTimer);
+    state.birthdaySpeechTimer = null;
+    window.speechSynthesis?.cancel();
   }
 }
 
@@ -1247,6 +1282,10 @@ function celebrate(count = 35) {
 function restartExperience() {
   stopMic();
   clearInterval(state.melodyTimer);
+  clearTimeout(state.birthdaySpeechTimer);
+  state.birthdaySpeechTimer = null;
+  state.birthdaySpoken = false;
+  window.speechSynthesis?.cancel();
   state.score = 0;
   state.qIndex = 0;
   state.picks = 0;
