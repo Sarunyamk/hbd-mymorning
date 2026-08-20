@@ -405,7 +405,7 @@ function scheduleBirthdayGreeting() {
     if (!state.music || state.birthdaySpoken) return;
     const name = String(experienceConfig.birthday?.name || '').trim();
     const greeting = new SpeechSynthesisUtterance(
-      `Happy Birthday${name ? `, ${name}` : ''}!`
+      `Happy Birthday to ${name ? `, ${name}` : 'you'}!`
     );
     greeting.lang = 'en-US';
     greeting.rate = 0.88;
@@ -992,8 +992,7 @@ function moveGuaranteedBowDrag(event) {
   if (!drag || state.guaranteedGiftTapCount >= 3) return;
   const dx = event.clientX - drag.startX,
     dy = event.clientY - drag.startY;
-  event.currentTarget.style.transform =
-    `translate(calc(-50% + ${dx}px),${dy}px) rotate(${dx * 0.12}deg)`;
+  event.currentTarget.style.transform = `translate(calc(-50% + ${dx}px),${dy}px) rotate(${dx * 0.12}deg)`;
   if (Math.hypot(dx, dy) > 85) {
     state.guaranteedBowDrag = null;
     state.guaranteedGiftTapCount = 3;
