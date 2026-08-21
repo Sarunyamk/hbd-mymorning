@@ -316,7 +316,7 @@
                   <span class="rarity special">SPECIAL GIFT</span>
                   <button class="consolation-gift-box" id="consolationGiftBox" onclick="tapConsolationGift()" aria-label="แตะกล่องหรือลากโบว์เพื่อแกะของขวัญ">
                     <span class="consolation-box-lid"></span><span class="consolation-box-body"></span>
-                    <span class="consolation-bow" onpointerdown="startConsolationBowDrag(event)" onpointermove="moveConsolationBowDrag(event)" onpointerup="endConsolationBowDrag(event)" onpointercancel="endConsolationBowDrag(event)">🎀</span>
+                    <span class="consolation-bow" draggable="false" ondragstart="return false" onpointerdown="startConsolationBowDrag(event)" onpointermove="moveConsolationBowDrag(event)" onpointerup="endConsolationBowDrag(event)" onpointercancel="endConsolationBowDrag(event)" onlostpointercapture="endConsolationBowDrag(event)">🎀</span>
                   </button>
                   <p id="consolationUnwrapHint">แตะกล่อง 3 ครั้ง หรือลากโบว์ออกเพื่อแกะ 🎀</p>
                 </div>
@@ -339,7 +339,7 @@
                 </div>
                 <div id="guaranteedGiftUnwrap" hidden>
                   <span class="rarity special" id="guaranteedGiftProgress"></span>
-                  <button class="consolation-gift-box" id="guaranteedGiftBox" onclick="tapGuaranteedGift()" aria-label="แตะกล่องหรือลากโบว์เพื่อเปิดของขวัญพิเศษ"><span class="consolation-box-lid"></span><span class="consolation-box-body"></span><span class="consolation-bow" onpointerdown="startGuaranteedBowDrag(event)" onpointermove="moveGuaranteedBowDrag(event)" onpointerup="endGuaranteedBowDrag(event)" onpointercancel="endGuaranteedBowDrag(event)">🎀</span><span class="guaranteed-heart-burst" id="guaranteedHeartBurst" aria-hidden="true"></span></button>
+                  <button class="consolation-gift-box" id="guaranteedGiftBox" onclick="tapGuaranteedGift()" aria-label="แตะกล่องหรือลากโบว์เพื่อเปิดของขวัญพิเศษ"><span class="consolation-box-lid"></span><span class="consolation-box-body"></span><span class="consolation-bow" draggable="false" ondragstart="return false" onpointerdown="startGuaranteedBowDrag(event)" onpointermove="moveGuaranteedBowDrag(event)" onpointerup="endGuaranteedBowDrag(event)" onpointercancel="endGuaranteedBowDrag(event)" onlostpointercapture="endGuaranteedBowDrag(event)">🎀</span><span class="guaranteed-heart-burst" id="guaranteedHeartBurst" aria-hidden="true"></span></button>
                   <p id="guaranteedGiftHint">แตะกล่อง 3 ครั้ง หรือลากโบว์ออกเพื่อแกะ 🎀</p>
                 </div>
                 <div id="guaranteedGiftResult" hidden>

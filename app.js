@@ -982,11 +982,13 @@ function tapGuaranteedGift() {
 }
 function startGuaranteedBowDrag(event) {
   if (state.guaranteedGiftTapCount >= 3) return;
+  event.preventDefault();
   event.stopPropagation();
   event.currentTarget.setPointerCapture?.(event.pointerId);
   state.guaranteedBowDrag = { startX: event.clientX, startY: event.clientY };
 }
 function moveGuaranteedBowDrag(event) {
+  event.preventDefault();
   event.stopPropagation();
   const drag = state.guaranteedBowDrag;
   if (!drag || state.guaranteedGiftTapCount >= 3) return;
@@ -1000,6 +1002,7 @@ function moveGuaranteedBowDrag(event) {
   }
 }
 function endGuaranteedBowDrag(event) {
+  event.preventDefault();
   event.stopPropagation();
   state.guaranteedBowDrag = null;
   if (state.guaranteedGiftTapCount < 3)
@@ -1153,11 +1156,13 @@ function tapConsolationGift() {
 }
 function startConsolationBowDrag(event) {
   if (state.consolationUnwrapDone) return;
+  event.preventDefault();
   event.stopPropagation();
   event.currentTarget.setPointerCapture?.(event.pointerId);
   state.consolationBowDrag = { startX: event.clientX, startY: event.clientY };
 }
 function moveConsolationBowDrag(event) {
+  event.preventDefault();
   event.stopPropagation();
   const drag = state.consolationBowDrag;
   if (!drag || state.consolationUnwrapDone) return;
@@ -1170,6 +1175,7 @@ function moveConsolationBowDrag(event) {
   }
 }
 function endConsolationBowDrag(event) {
+  event.preventDefault();
   event.stopPropagation();
   state.consolationBowDrag = null;
   if (!state.consolationUnwrapDone) event.currentTarget.style.transform = '';
