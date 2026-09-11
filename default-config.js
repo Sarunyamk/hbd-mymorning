@@ -26,7 +26,7 @@ const DEFAULT_EXPERIENCE_CONFIG = {
       preQuizMessage:
         'ลองตอบคำถาม {questionCount} ข้อก่อนนะ ตอบถูก 1 ข้อ = ได้สิทธิ์เลือกลูกบอลของขวัญ 1 ลูก 🎁',
       directGiftTitle: 'พร้อมเปิดของขวัญหรือยัง? 👀',
-      directGiftMessage: 'ข้ามคำถามแล้วไปเลือกลูกบอลของขวัญกันได้เลย 🎁',
+      directGiftMessage: 'ไปเลือกลูกบอลของขวัญกันได้เลย 🎁',
       quizButtonLabel: 'เริ่มตอบคำถาม 😏',
       giftButtonLabel: 'ไปเปิดกล่องของขวัญ 🎁',
     },
