@@ -22,20 +22,20 @@
 ## Requirements
 
 - Node.js 22 หรือใหม่กว่า
-- npm
+- pnpm 11.1.3
 - Supabase project
 - GitHub repository หากต้องการ Deploy ด้วย GitHub Pages
-- Supabase CLI เฉพาะกรณีที่ต้องการใช้หน้า Admin เพื่อลบหรือระงับผู้ใช้ โดยเรียกผ่าน `npx` ได้
+- Supabase CLI เฉพาะกรณีที่ต้องการใช้หน้า Admin เพื่อลบหรือระงับผู้ใช้ โดยเรียกผ่าน `pnpm dlx` ได้
 
 ## 1. Clone และติดตั้ง
 
 ```bash
 git clone YOUR_REPOSITORY_URL
 cd YOUR_PROJECT_FOLDER
-npm ci
+pnpm install --frozen-lockfile
 ```
 
-ถ้าแก้ Dependencies ให้ใช้ `npm install` และ Commit `package-lock.json` ที่เปลี่ยนแปลงด้วย
+ถ้าแก้ Dependencies ให้ใช้ `pnpm add`, `pnpm remove` หรือ `pnpm install` ตามงาน และ Commit `pnpm-lock.yaml` ที่เปลี่ยนแปลงด้วย
 
 ## 2. สร้าง Supabase project
 
@@ -100,7 +100,7 @@ https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPOSITORY/auth.html
 ## 5. รันในเครื่อง
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 เปิด URL ที่ Vite แสดง ปกติคือ:
@@ -109,7 +109,7 @@ npm run dev
 http://localhost:5173/auth.html
 ```
 
-อย่าเปิดผ่าน `file://`, Python HTTP Server หรือ VS Code Live Server เพราะโปรเจกต์ใช้ Vite Environment Variables และ npm module ของ Supabase
+อย่าเปิดผ่าน `file://`, Python HTTP Server หรือ VS Code Live Server เพราะโปรเจกต์ใช้ Vite Environment Variables และ dependency modules ของ Supabase
 
 เส้นทางหลัก:
 
@@ -121,8 +121,8 @@ Recipient: index.html?id=<public-id>
 ## 6. ทดสอบ Production Build
 
 ```bash
-npm run build
-npm run preview
+pnpm build
+pnpm preview
 ```
 
 ไฟล์ที่ Deploy จะถูกสร้างใน `dist/`
@@ -145,9 +145,9 @@ set role = 'admin', is_active = true;
 การลบหรือระงับ Auth user ต้องใช้ Server-side Admin API จึงต้อง Deploy Edge Function ที่มีอยู่ในโปรเจกต์:
 
 ```bash
-npx supabase login
-npx supabase link --project-ref YOUR_PROJECT_REF
-npx supabase functions deploy admin-users --no-verify-jwt
+pnpm dlx supabase login
+pnpm dlx supabase link --project-ref YOUR_PROJECT_REF
+pnpm dlx supabase functions deploy admin-users --no-verify-jwt
 ```
 
 Function จะตรวจ Access Token และ Role Admin อีกครั้งก่อนใช้ Secret ฝั่ง Supabase ห้ามนำ `SUPABASE_SECRET_KEY` หรือ `SUPABASE_SERVICE_ROLE_KEY` มาใส่ใน Frontend `.env`
@@ -232,7 +232,7 @@ supabase/functions/admin-users/        Optional Admin Edge Function
 ## Commands
 
 ```bash
-npm run dev       # Local development
-npm run build     # Production build
-npm run preview   # Preview dist locally
+pnpm dev       # Local development
+pnpm build     # Production build
+pnpm preview   # Preview dist locally
 ```
