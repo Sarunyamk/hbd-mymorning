@@ -3,6 +3,13 @@ const SETTINGS_STORAGE_KEY=EXPERIENCE_ID?`hbd-experience-draft-v1:${EXPERIENCE_I
 const defaults=window.DEFAULT_EXPERIENCE_CONFIG;
 const form=document.getElementById('settingsForm');
 const previewFrame=document.getElementById('previewFrame');
+const settingsTabs=document.getElementById('settingsTabs');
+const settingsTabsShell=document.getElementById('settingsTabsShell');
+const deviceStage=document.getElementById('deviceStage');
+const deviceShell=document.getElementById('deviceShell');
+const deviceFrame=document.getElementById('deviceFrame');
+const SECTION_PREVIEW_SCENES=Object.freeze({general:'intro',cake:'cake',card:'message',avatar:'message',quiz:'quiz',gifts:'gift',memories:'memories',review:'summary'});
+const PREVIEW_DEVICE_HEIGHTS=Object.freeze({360:780,375:812,390:844,430:932});
 let draftLoadNotice='';
 let draftConfig=loadDraft();
 let saveTimer=null;
@@ -515,6 +522,27 @@ function sendPreviewScene(){
   previewFrame.contentWindow?.postMessage({type:'HBD_PREVIEW_SCENE',scene:document.getElementById('previewScene').value},'*');
 }
 
+function updateTabsScrollState(){
+  const maxScroll=Math.max(0,settingsTabs.scrollWidth-settingsTabs.clientWidth),left=settingsTabs.scrollLeft;
+  const canScrollLeft=left>2,canScrollRight=left<maxScroll-2;
+  settingsTabsShell.classList.toggle('can-scroll-left',canScrollLeft);
+  settingsTabsShell.classList.toggle('can-scroll-right',canScrollRight);
+  document.getElementById('tabsScrollLeft').disabled=!canScrollLeft;
+  document.getElementById('tabsScrollRight').disabled=!canScrollRight;
+}
+function centerSettingsTab(button,behavior='smooth'){
+  const target=button.offsetLeft-(settingsTabs.clientWidth-button.offsetWidth)/2;
+  settingsTabs.scrollTo({left:Math.max(0,target),behavior});
+}
+function updatePreviewDevice(){
+  const width=Number(document.getElementById('deviceWidth').value)||375;
+  const height=PREVIEW_DEVICE_HEIGHTS[width]||Math.round(width*2.165);
+  const availableWidth=Math.max(1,deviceStage.clientWidth-36),availableHeight=Math.max(1,deviceStage.clientHeight-36);
+  const scale=Math.min(1,availableWidth/width,availableHeight/height);
+  deviceFrame.style.width=`${width}px`;deviceFrame.style.height=`${height}px`;deviceFrame.style.transform=`scale(${scale})`;
+  deviceShell.style.width=`${width*scale}px`;deviceShell.style.height=`${height*scale}px`;
+}
+
 form.addEventListener('input',event=>{
   const input=event.target.closest('[data-path]');if(!input)return;
   let value=input.type==='checkbox'?input.checked:input.value;
@@ -708,20 +736,37 @@ function endAvatarDrag(event){
 avatarCanvasWrap.addEventListener('pointerup',endAvatarDrag);
 avatarCanvasWrap.addEventListener('pointercancel',endAvatarDrag);
 
-function openSettingsTab(name,{updateHash=true}={}){
+function openSettingsTab(name,{updateHash=true,syncPreview=true}={}){
   const button=document.querySelector(`[data-tab="${name}"]`);
   if(!button)return;
   document.querySelectorAll('[data-tab]').forEach(item=>item.classList.toggle('active',item===button));
   document.querySelectorAll('[data-panel]').forEach(panel=>panel.classList.toggle('active',panel.dataset.panel===button.dataset.tab));
+  centerSettingsTab(button);
+  if(syncPreview){
+    const scene=SECTION_PREVIEW_SCENES[name];
+    if(scene){document.getElementById('previewScene').value=scene;sendPreviewScene();}
+  }
   if(updateHash)history.replaceState(null,'',`#${name}`);
 }
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>openSettingsTab(button.dataset.tab)));
 window.addEventListener('hashchange',()=>openSettingsTab(location.hash.slice(1)||'general',{updateHash:false}));
 
-document.getElementById('deviceWidth').addEventListener('change',event=>{document.getElementById('deviceFrame').style.width=`${event.target.value}px`;});
+document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('focus',()=>centerSettingsTab(button)));
+settingsTabs.addEventListener('scroll',updateTabsScrollState,{passive:true});
+settingsTabs.addEventListener('wheel',event=>{
+  if(Math.abs(event.deltaY)<=Math.abs(event.deltaX)||settingsTabs.scrollWidth<=settingsTabs.clientWidth)return;
+  event.preventDefault();settingsTabs.scrollLeft+=event.deltaY;
+},{passive:false});
+document.getElementById('tabsScrollLeft').addEventListener('click',()=>settingsTabs.scrollBy({left:-Math.max(180,settingsTabs.clientWidth*.65),behavior:'smooth'}));
+document.getElementById('tabsScrollRight').addEventListener('click',()=>settingsTabs.scrollBy({left:Math.max(180,settingsTabs.clientWidth*.65),behavior:'smooth'}));
+document.getElementById('deviceWidth').addEventListener('change',updatePreviewDevice);
 document.getElementById('previewScene').addEventListener('change',sendPreviewScene);
 document.getElementById('previewBtn').addEventListener('click',()=>{sendPreview();document.getElementById('previewPanel').scrollIntoView({behavior:'smooth',block:'start'});});
-previewFrame.addEventListener('load',()=>setTimeout(sendPreview,120));
+previewFrame.addEventListener('load',()=>setTimeout(()=>{sendPreview();updatePreviewDevice();},120));
+if('ResizeObserver'in window){
+  new ResizeObserver(()=>{updatePreviewDevice();updateTabsScrollState();}).observe(deviceStage);
+  new ResizeObserver(updateTabsScrollState).observe(settingsTabs);
+}else window.addEventListener('resize',()=>{updatePreviewDevice();updateTabsScrollState();});
 window.addEventListener('message',event=>{
   if(event.source!==previewFrame.contentWindow||event.data?.type!=='HBD_PREVIEW_RESULT')return;
   const validation=event.data.validation;
@@ -785,4 +830,6 @@ window.HBDSettings={
 
 renderForm();
 openSettingsTab(location.hash.slice(1)||'general',{updateHash:false});
+updateTabsScrollState();
+updatePreviewDevice();
 if(draftLoadNotice){saveDraft();const status=document.getElementById('saveStatus');status.textContent=draftLoadNotice;status.classList.add('validation-ok');}

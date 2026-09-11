@@ -49,16 +49,20 @@
           </p>
         </div>
 
-        <nav class="settings-tabs" aria-label="Settings sections">
-          <button class="active" data-tab="general">General</button>
-          <button data-tab="cake">Cake</button>
-          <button data-tab="card">Card after Cake</button>
-          <button data-tab="avatar">Avatar</button>
-          <button data-tab="quiz">Quiz</button>
-          <button data-tab="gifts">Gifts</button>
-          <button data-tab="memories">Memories</button>
-          <button data-tab="review">Review</button>
-        </nav>
+        <div class="settings-tabs-shell" id="settingsTabsShell">
+          <button class="tabs-scroll-button tabs-scroll-left" id="tabsScrollLeft" type="button" aria-label="เลื่อนเมนูไปทางซ้าย">‹</button>
+          <nav class="settings-tabs" id="settingsTabs" aria-label="Settings sections">
+            <button class="active" data-tab="general">General</button>
+            <button data-tab="cake">Cake</button>
+            <button data-tab="card">Card after Cake</button>
+            <button data-tab="avatar">Avatar</button>
+            <button data-tab="quiz">Quiz</button>
+            <button data-tab="gifts">Gifts</button>
+            <button data-tab="memories">Memories</button>
+            <button data-tab="review">Review</button>
+          </nav>
+          <button class="tabs-scroll-button tabs-scroll-right" id="tabsScrollRight" type="button" aria-label="เลื่อนเมนูไปทางขวา">›</button>
+        </div>
 
         <div class="validation-summary" id="validationSummary" role="alert" hidden></div>
 
@@ -477,13 +481,15 @@
             </label>
           </div>
         </div>
-        <div class="device-stage">
-          <div class="device-frame" id="deviceFrame">
-            <iframe
-              id="previewFrame"
-              src="index.html"
-              title="Birthday Experience preview"
-            ></iframe>
+        <div class="device-stage" id="deviceStage">
+          <div class="device-shell" id="deviceShell">
+            <div class="device-frame" id="deviceFrame">
+              <iframe
+                id="previewFrame"
+                src="index.html"
+                title="Birthday Experience preview"
+              ></iframe>
+            </div>
           </div>
         </div>
       </aside>
