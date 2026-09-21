@@ -15,6 +15,8 @@
 - เปิดหรือปิด Quiz และกำหนดจำนวนของขวัญที่เปิดได้
 - รางวัลปลอบใจแบบของขวัญพิเศษ สิทธิ์จับเพิ่ม หรือให้ผู้รับเลือกเอง
 - รางวัลพิเศษแบบการันตี กำหนดได้หลายรางวัลและไม่ขึ้นกับผลการสุ่ม
+- บันทึกรางวัลที่ผู้รับได้รับจริง และเปลี่ยนสถานะเป็น `ใช้แล้ว` ผ่าน Supabase
+- กู้คืนฉาก คะแนน สิทธิ์จับ และรางวัลเดิมเมื่อ Refresh Public Experience บนอุปกรณ์เดิม
 - Publish, Republish, Unpublish, Public URL และ QR Code
 - Admin จัดการสถานะหรือลบผู้ใช้ได้
 - Row Level Security แยกข้อมูลของผู้ใช้แต่ละคน
@@ -52,6 +54,34 @@ pnpm install --frozen-lockfile
 3. [`supabase/migrations/20260921000000_gift_redemptions.sql`](supabase/migrations/20260921000000_gift_redemptions.sql)
 
 Migration จะสร้าง `experiences`, `profiles`, `awarded_gifts`, RLS policies, Database functions และ Public RPC สำหรับโหลด Published Experience รวมถึงบันทึกและใช้รางวัลจริง
+
+### Upgrade โปรเจกต์เดิม: Gift redemption และ Resume หลัง Refresh
+
+หากมีตาราง `experiences` และ `profiles` อยู่แล้ว ให้รัน Migration ลำดับที่ 3 ทั้งไฟล์ใน Supabase SQL Editor จากนั้นรัน:
+
+```sql
+notify pgrst, 'reload schema';
+```
+
+Migration นี้เพิ่ม:
+
+- ตาราง `awarded_gifts` สำหรับเก็บรางวัลที่ผู้รับได้รับจริง โดยไม่แก้ `draft_config` หรือ `published_config`
+- RPC `sync_awarded_gifts` สำหรับตรวจสอบรางวัลกับ Published configuration ก่อนบันทึก
+- RPC `redeem_awarded_gift` สำหรับเปลี่ยนสถานะจาก `available` เป็น `redeemed`
+- RLS และ Owner policy สำหรับข้อมูลรางวัล
+- `ON DELETE CASCADE` เพื่อลบรางวัลตาม Experience เมื่อเจ้าของลบงานหรือ Account
+
+หลัง Deploy เมื่อผู้รับมาถึง Summary ระบบจะบันทึกรางวัลอัตโนมัติ ปุ่มจะแสดง `ใช้` เมื่อ Cloud ยืนยันแล้ว และจะแสดงตรา `ใช้แล้ว ✓` หลังยืนยันใช้สำเร็จ หาก RPC หรือ Internet มีปัญหา ระบบจะไม่สร้างสถานะสำเร็จปลอมและจะแสดงปุ่มให้ลองเชื่อมต่อใหม่
+
+Runtime progress ของ Public Experience เก็บใน Local Storage แยกตาม `public_id` เป็นเวลาไม่เกิน 30 วัน การ Refresh บนอุปกรณ์และ Browser เดิมจะกลับฉากล่าสุดพร้อมคะแนน สิทธิ์จับ และรางวัลที่เก็บแล้ว ส่วนการกด `เริ่มใหม่` จะล้าง Progress เดิม ฟังก์ชันนี้ไม่ใช่การ Sync progress ข้ามอุปกรณ์ แต่สถานะการใช้รางวัลจริงเก็บใน Supabase
+
+หลัง Upgrade ให้ตรวจว่า Database มีตารางและ Functions ต่อไปนี้:
+
+```text
+public.awarded_gifts
+public.sync_awarded_gifts(uuid, jsonb)
+public.redeem_awarded_gift(uuid, uuid)
+```
 
 ## 3. ตั้งค่า Environment Variables
 
