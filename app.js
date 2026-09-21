@@ -1357,9 +1357,9 @@ function renderSummary() {
         button.textContent = 'ใช้แล้ว';
         button.disabled = true;
       } else if (record) {
-        button.textContent = 'ใช้รางวัล';
+        button.textContent = 'ใช้';
       } else if (state.awardSyncStatus === 'error') {
-        button.textContent = 'ลองบันทึกรางวัลใหม่';
+        button.textContent = 'เชื่อมต่อไม่สำเร็จ • ลองใหม่';
         button.dataset.syncAwards = 'true';
       } else {
         button.textContent = 'กำลังบันทึกรางวัล…';
