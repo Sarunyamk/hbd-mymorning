@@ -32,6 +32,8 @@ const state = {
   guaranteedGiftTapCount: 0,
   guaranteedGiftsCompleted: false,
   guaranteedBowDrag: null,
+  awardedGiftRecords: new Map(),
+  awardSyncStatus: 'idle',
 };
 
 const MIC_CONFIG = {
@@ -934,6 +936,7 @@ function continueAfterGiftRewards() {
   renderSummary();
   showScene('summary');
   celebrate(50);
+  syncAwardedGifts();
 }
 
 function startGuaranteedGifts() {
@@ -1226,6 +1229,78 @@ function openFinalSurprise(button) {
     : 'เล่นใหม่';
   showScene('final');
 }
+
+function giftAwardSource(gift) {
+  if (gift.guaranteed) return 'guaranteed-gift';
+  if (gift.consolation) return 'consolation';
+  return gift.source === 'consolation-extra-pick'
+    ? 'consolation-extra-pick'
+    : 'normal';
+}
+
+function giftAwardKey(gift) {
+  const id = String(gift.id || '').trim();
+  return id ? `${giftAwardSource(gift)}:${id}` : '';
+}
+
+async function syncAwardedGifts() {
+  const api = window.giftRedemptionApi;
+  if (!api?.enabled || !state.gifts.length || state.awardSyncStatus === 'syncing')
+    return;
+  const awards = state.gifts
+    .map((gift) => ({
+      awardKey: giftAwardKey(gift),
+      giftConfigId: String(gift.id || '').trim(),
+      source: giftAwardSource(gift),
+    }))
+    .filter((award) => award.awardKey && award.giftConfigId);
+  if (!awards.length) return;
+  state.awardSyncStatus = 'syncing';
+  renderSummary();
+  try {
+    const records = await api.syncAwards(awards);
+    state.awardedGiftRecords = new Map(
+      records.map((record) => [record.award_key, record])
+    );
+    state.awardSyncStatus = 'ready';
+  } catch (error) {
+    console.error('Award sync error:', error);
+    state.awardSyncStatus = 'error';
+  }
+  renderSummary();
+}
+
+async function redeemGiftAward(awardKey) {
+  const record = state.awardedGiftRecords.get(awardKey);
+  if (!record || record.status === 'redeemed') return;
+  if (!confirm('ยืนยันใช้รางวัลนี้หรือไม่? เมื่อยืนยันแล้วจะแสดงว่าใช้แล้ว'))
+    return;
+  const button = [...document.querySelectorAll('[data-redeem-award]')].find(
+    (item) => item.dataset.redeemAward === awardKey
+  );
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'กำลังบันทึก…';
+  }
+  try {
+    const updated = await window.giftRedemptionApi.redeemAward(record.award_id);
+    state.awardedGiftRecords.set(awardKey, {
+      ...record,
+      ...updated,
+      status: 'redeemed',
+    });
+    renderSummary();
+  } catch (error) {
+    console.error('Award redemption error:', error);
+    alert(
+      navigator.onLine
+        ? 'บันทึกการใช้รางวัลไม่สำเร็จ กรุณาลองอีกครั้ง'
+        : 'ยังใช้รางวัลไม่ได้ กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง'
+    );
+    renderSummary();
+  }
+}
+
 function renderSummary() {
   const root = document.getElementById('giftGrid');
   root.innerHTML = '';
@@ -1261,9 +1336,50 @@ function renderSummary() {
       badge.textContent = '💝 ของขวัญพิเศษ';
       d.prepend(badge);
     }
+    const api = window.giftRedemptionApi;
+    if (api?.enabled && state.gifts.length) {
+      const awardKey = giftAwardKey(g);
+      const record = state.awardedGiftRecords.get(awardKey);
+      const redeemed = record?.status === 'redeemed';
+      if (redeemed) {
+        d.classList.add('is-redeemed');
+        const stamp = document.createElement('div');
+        stamp.className = 'gift-used-stamp';
+        stamp.textContent = 'ใช้แล้ว ✓';
+        stamp.setAttribute('role', 'status');
+        d.appendChild(stamp);
+      }
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'gift-redeem-btn';
+      button.dataset.redeemAward = awardKey;
+      if (redeemed) {
+        button.textContent = 'ใช้แล้ว';
+        button.disabled = true;
+      } else if (record) {
+        button.textContent = 'ใช้รางวัล';
+      } else if (state.awardSyncStatus === 'error') {
+        button.textContent = 'ลองบันทึกรางวัลใหม่';
+        button.dataset.syncAwards = 'true';
+      } else {
+        button.textContent = 'กำลังบันทึกรางวัล…';
+        button.disabled = true;
+      }
+      d.appendChild(button);
+    }
     root.appendChild(d);
   });
 }
+
+document.getElementById('giftGrid').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-redeem-award]');
+  if (!button || button.disabled) return;
+  if (button.dataset.syncAwards) {
+    syncAwardedGifts();
+    return;
+  }
+  redeemGiftAward(button.dataset.redeemAward);
+});
 
 function celebrate(count = 35) {
   const root = document.getElementById('confetti');
@@ -1309,6 +1425,8 @@ function restartExperience() {
   state.guaranteedGiftTapCount = 0;
   state.guaranteedGiftsCompleted = false;
   state.guaranteedBowDrag = null;
+  state.awardedGiftRecords = new Map();
+  state.awardSyncStatus = 'idle';
   document.getElementById('consolationOverlay').classList.remove('show');
   document.getElementById('consolationUnwrapOverlay').classList.remove('show');
   document.getElementById('guaranteedGiftOverlay').classList.remove('show');

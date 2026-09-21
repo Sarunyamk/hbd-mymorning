@@ -49,8 +49,9 @@ pnpm install --frozen-lockfile
 
 1. [`supabase/migrations/20260811000000_phase10_foundation.sql`](supabase/migrations/20260811000000_phase10_foundation.sql)
 2. [`supabase/migrations/20260811010000_admin_roles.sql`](supabase/migrations/20260811010000_admin_roles.sql)
+3. [`supabase/migrations/20260921000000_gift_redemptions.sql`](supabase/migrations/20260921000000_gift_redemptions.sql)
 
-Migration จะสร้าง `experiences`, `profiles`, RLS policies, Database functions และ Public RPC สำหรับโหลด Published Experience
+Migration จะสร้าง `experiences`, `profiles`, `awarded_gifts`, RLS policies, Database functions และ Public RPC สำหรับโหลด Published Experience รวมถึงบันทึกและใช้รางวัลจริง
 
 ## 3. ตั้งค่า Environment Variables
 

@@ -148,6 +148,15 @@ Quiz และ Memories สามารถปิดได้ การปิด 
 - มอบหลังจบการจับและ Flow รางวัลปลอบใจ
 - ผู้รับต้องเปิดแต่ละรางวัลตามลำดับก่อนเข้าสู่ Summary
 
+### Gift redemption
+
+- รางวัลที่ผู้รับได้รับจริงต้องบันทึกแยกจาก JSON Configuration
+- Summary แสดงปุ่ม `ใช้รางวัล` เฉพาะ Public Experience ที่เชื่อมต่อ Cloud สำเร็จ
+- ผู้รับต้องยืนยันก่อนใช้รางวัล และ Database เป็นแหล่งข้อมูลจริงของสถานะ
+- รางวัลที่ใช้แล้วต้องคงอยู่ใน Summary พร้อมตรา `ใช้แล้ว` และไม่สามารถกดใช้ซ้ำ
+- หากบันทึก Cloud ไม่สำเร็จ ห้ามแสดงสถานะว่าใช้แล้วและต้องเปิดให้ลองใหม่
+- การลบ Experience หรือเจ้าของ Account ต้องลบประวัติรางวัลต่อเนื่องด้วย Database cascade
+
 ### Memories
 
 - เพิ่มรูปด้วย URL ได้สูงสุด 10 รูป
@@ -250,11 +259,12 @@ Scene selector ยังต้องใช้ Manual override ได้ แล�
 7. Recipient เล่น Journey ตาม Feature flags ได้จนจบ
 8. Gift pick count ไม่เกินสิทธิ์และลูกบอลเดิมไม่ถูกเปิดซ้ำ
 9. Consolation และ Guaranteed gifts ทำงานตาม Config โดยไม่ให้ซ้ำ
-10. Summary แสดงรางวัลทั้งหมดและแยกประเภทพิเศษได้
-11. Creator A ไม่สามารถอ่านหรือแก้ข้อมูลของ Creator B
-12. Public URL เปิดได้โดยไม่ Login และแสดงเฉพาะ Published snapshot
-13. QR เดิมยังใช้ได้หลัง Republish
-14. Production build ผ่านและใช้งานบน HTTPS ได้
+10. Summary แสดงรางวัลทั้งหมด แยกประเภทพิเศษ และบันทึกสถานะใช้รางวัลจริงได้
+11. รางวัลต้องแสดง `ใช้แล้ว` หลัง Database ยืนยัน และห้ามแสดงสำเร็จเมื่อ Offline หรือ RPC ล้มเหลว
+12. Creator A ไม่สามารถอ่านหรือแก้ข้อมูลของ Creator B
+13. Public URL เปิดได้โดยไม่ Login และแสดงเฉพาะ Published snapshot
+14. QR เดิมยังใช้ได้หลัง Republish
+15. Production build ผ่านและใช้งานบน HTTPS ได้
 
 ## 13. Product principle
 

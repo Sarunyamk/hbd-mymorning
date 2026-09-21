@@ -7,6 +7,28 @@ const stateIcon = document.getElementById('publicStateIcon');
 const retryButton = document.getElementById('publicRetryBtn');
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+window.giftRedemptionApi = {
+  enabled: Boolean(publicId && uuidPattern.test(publicId) && isSupabaseConfigured),
+  async syncAwards(awards) {
+    if (!this.enabled) throw new Error('GIFT_REDEMPTION_UNAVAILABLE');
+    const { data, error } = await supabase.rpc('sync_awarded_gifts', {
+      p_public_id: publicId,
+      p_awards: awards,
+    });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+  async redeemAward(awardId) {
+    if (!this.enabled) throw new Error('GIFT_REDEMPTION_UNAVAILABLE');
+    const { data, error } = await supabase.rpc('redeem_awarded_gift', {
+      p_public_id: publicId,
+      p_award_id: awardId,
+    });
+    if (error) throw error;
+    return Array.isArray(data) ? data[0] : data;
+  },
+};
+
 function showError(title, message) {
   document.documentElement.classList.remove('public-loading', 'public-ready');
   document.documentElement.classList.add('public-error');
