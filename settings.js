@@ -336,8 +336,8 @@ function renderMemoryBuilder(openIndex){
     const choices=document.createElement('div');choices.className='field-grid two-columns';
     const layoutField=document.createElement('label');layoutField.className='field';layoutField.innerHTML='<span>รูปแบบการวาง</span><select data-memory-field="layout"><option value="">Standard</option><option value="featured">Featured — รูปเด่น</option><option value="wide">Wide — แนวนอน</option><option value="tilt-left">เอียงซ้าย</option><option value="tilt-right">เอียงขวา</option></select><em data-error="memories.items.'+index+'.layout"></em>';layoutField.querySelector('select').value=item.layout||'';
     const lookField=document.createElement('label');lookField.className='field';lookField.innerHTML='<span>โทนสีรูป</span><select data-memory-field="look"><option value="">Original</option><option value="warm">Warm</option><option value="cool">Cool</option><option value="night">Night</option><option value="mint">Mint</option><option value="pink">Pink</option></select><em data-error="memories.items.'+index+'.look"></em>';lookField.querySelector('select').value=item.look||'';choices.append(layoutField,lookField);body.appendChild(choices);
-    const filmToggle=document.createElement('div');filmToggle.className='toggle-card memory-film-toggle';filmToggle.innerHTML='<div><b>แสดงในแถบฟิล์ม</b><span>เลือกได้สูงสุด 4 รูป</span></div><label class="switch"><input type="checkbox" data-memory-film><i></i></label>';
-    const checkbox=filmToggle.querySelector('input');checkbox.checked=filmIds.includes(item.id);checkbox.disabled=!checkbox.checked&&filmIds.length>=EXPERIENCE_LIMITS.memoryFilmMax;body.appendChild(filmToggle);
+    const filmToggle=document.createElement('div');filmToggle.className='toggle-card memory-film-toggle';filmToggle.innerHTML=`<div><b>แสดงในแถบฟิล์ม</b><span>เลือกแล้ว ${filmIds.length} / ${EXPERIENCE_LIMITS.memoryFilmMax} รูป</span></div><label class="switch"><input type="checkbox" data-memory-film><i></i></label>`;
+    const checkbox=filmToggle.querySelector('input');checkbox.checked=filmIds.includes(item.id);body.appendChild(filmToggle);
     const tools=document.createElement('div');tools.className='memory-card-tools';
     [['move-up','↑ ขึ้น',index===0],['move-down','↓ ลง',index===items.length-1],['duplicate','ทำสำเนา',items.length>=EXPERIENCE_LIMITS.memoryMax],['remove-memory','ลบรูป',false]].forEach(([action,label,disabled])=>{const button=document.createElement('button');button.type='button';button.dataset.memoryAction=action;button.textContent=label;button.disabled=disabled;if(action==='remove-memory')button.className='remove-memory';tools.appendChild(button);});
     body.appendChild(tools);card.appendChild(body);list.appendChild(card);
@@ -664,7 +664,14 @@ document.getElementById('memoryEditorList').addEventListener('change',event=>{
   const index=Number(card.dataset.memoryIndex),item=draftConfig.memories.items[index];
   if(event.target.matches('[data-memory-film]')){
     const ids=draftConfig.memories.filmItemIds;
-    if(event.target.checked&&!ids.includes(item.id)&&ids.length<EXPERIENCE_LIMITS.memoryFilmMax)ids.push(item.id);
+    if(event.target.checked&&!ids.includes(item.id)){
+      if(ids.length>=EXPERIENCE_LIMITS.memoryFilmMax){
+        event.target.checked=false;
+        alert(`แถบฟิล์มเลือกได้สูงสุด ${EXPERIENCE_LIMITS.memoryFilmMax} รูป กรุณาปิดรูปอื่นก่อน`);
+        return;
+      }
+      ids.push(item.id);
+    }
     else if(!event.target.checked)draftConfig.memories.filmItemIds=ids.filter(id=>id!==item.id);
     commitMemoryChange({render:true,openIndex:index});return;
   }
