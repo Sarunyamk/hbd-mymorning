@@ -159,7 +159,8 @@ begin
       v_source,
       v_snapshot
     )
-    on conflict (experience_id, award_key) do nothing;
+    on conflict on constraint awarded_gifts_experience_id_award_key_key
+    do nothing;
   end loop;
 
   return query

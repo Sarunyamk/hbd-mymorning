@@ -306,7 +306,7 @@ function applyExperienceConfig(
   renderExperienceContent();
   renderCandles();
   renderSummary();
-  if (restart) restartExperience();
+  if (restart) restartExperience({ preserveProgress: true });
   return validation;
 }
 
@@ -337,6 +337,179 @@ function sparkleInit() {
 }
 sparkleInit();
 
+const EXPERIENCE_PROGRESS_VERSION = 1;
+const EXPERIENCE_PROGRESS_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
+
+function experienceProgressKey(publicId = window.PUBLIC_EXPERIENCE_ID) {
+  return publicId ? `hbd-public-progress-v1:${publicId}` : '';
+}
+
+function saveExperienceProgress() {
+  const key = experienceProgressKey();
+  if (
+    !key ||
+    !document.documentElement.classList.contains('public-ready')
+  )
+    return;
+  const progress = {
+    version: EXPERIENCE_PROGRESS_VERSION,
+    savedAt: Date.now(),
+    scene: state.scene,
+    score: state.score,
+    qIndex: state.qIndex,
+    picks: state.picks,
+    used: state.used,
+    gifts: state.gifts,
+    boxOpened: state.boxOpened,
+    blowCompleted: state.blowCompleted,
+    finalOpened: state.finalOpened,
+    consolationApplied: state.consolationApplied,
+    extraPickActive: state.extraPickActive,
+    guaranteedGiftIndex: state.guaranteedGiftIndex,
+    guaranteedGiftsCompleted: state.guaranteedGiftsCompleted,
+  };
+  try {
+    localStorage.setItem(key, JSON.stringify(progress));
+  } catch (error) {
+    console.warn('Experience progress save error:', error);
+  }
+}
+
+function clearExperienceProgress() {
+  const key = experienceProgressKey();
+  if (!key) return;
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.warn('Experience progress clear error:', error);
+  }
+}
+
+function restoreGiftScene() {
+  renderBalls();
+  const collectedIds = new Set(
+    state.gifts
+      .filter((gift) => !gift.guaranteed && !gift.consolation)
+      .map((gift) => String(gift.id || ''))
+  );
+  document.querySelectorAll('.ball').forEach((ball) => {
+    try {
+      const gift = JSON.parse(ball.dataset.gift);
+      if (collectedIds.has(String(gift.id || ''))) ball.classList.add('used');
+    } catch {
+      // Ignore malformed local progress and leave the ball available.
+    }
+  });
+  document.getElementById('pickLimit').textContent = state.picks;
+  document.getElementById('pickUsed').textContent = state.used;
+  const box = document.getElementById('giftbox');
+  box.classList.toggle('open', state.boxOpened);
+  box.classList.toggle('closed', !state.boxOpened);
+  document.getElementById('boxBtn').style.display = state.boxOpened
+    ? 'none'
+    : 'inline-block';
+  document.getElementById('giftHint').textContent = state.boxOpened
+    ? `เหลืออีก ${Math.max(0, state.picks - state.used)} ลูกที่จะเลือกได้ ✨`
+    : 'แตะกล่องเพื่อเปิดดูว่าข้างในมีอะไร 👀';
+  showScene('gift');
+  if (state.picks > 0 && state.used >= state.picks) {
+    const hasConsolationOutcome = state.gifts.some(
+      (gift) => gift.consolation || gift.source === 'consolation-extra-pick'
+    );
+    if (state.consolationApplied && !hasConsolationOutcome)
+      state.consolationApplied = false;
+    const guaranteedCount = state.gifts.filter((gift) => gift.guaranteed).length;
+    state.guaranteedGiftIndex = guaranteedCount;
+    state.guaranteedGiftsCompleted =
+      guaranteedCount >=
+      (experienceConfig.giftBox.guaranteedGifts.items?.length || 0);
+    setTimeout(finishGiftRound, 250);
+  }
+}
+
+function restoreExperienceProgress(publicId) {
+  const key = experienceProgressKey(publicId);
+  if (!key) return false;
+  let progress;
+  try {
+    progress = JSON.parse(localStorage.getItem(key) || 'null');
+  } catch {
+    localStorage.removeItem(key);
+    return false;
+  }
+  if (
+    !progress ||
+    progress.version !== EXPERIENCE_PROGRESS_VERSION ||
+    Date.now() - Number(progress.savedAt || 0) > EXPERIENCE_PROGRESS_MAX_AGE
+  ) {
+    localStorage.removeItem(key);
+    return false;
+  }
+  const validScenes = new Set([
+    'intro',
+    'cake',
+    'message',
+    'quiz',
+    'result',
+    'gift',
+    'summary',
+    'final',
+    'memories',
+  ]);
+  state.score = Math.max(0, Number(progress.score) || 0);
+  state.qIndex = Math.max(
+    0,
+    Math.min(questions.length - 1, Number(progress.qIndex) || 0)
+  );
+  state.picks = Math.max(
+    0,
+    Math.min(gifts.length, Number(progress.picks) || 0)
+  );
+  state.used = Math.max(
+    0,
+    Math.min(state.picks, Number(progress.used) || 0)
+  );
+  state.gifts = Array.isArray(progress.gifts)
+    ? cloneValue(progress.gifts).slice(0, 40)
+    : [];
+  state.boxOpened = Boolean(progress.boxOpened);
+  state.blowCompleted = Boolean(progress.blowCompleted);
+  state.finalOpened = Boolean(progress.finalOpened);
+  state.consolationApplied = Boolean(progress.consolationApplied);
+  state.extraPickActive = Boolean(progress.extraPickActive);
+  state.guaranteedGiftIndex = Math.max(
+    0,
+    Number(progress.guaranteedGiftIndex) || 0
+  );
+  state.guaranteedGiftsCompleted = Boolean(progress.guaranteedGiftsCompleted);
+  state.selectedBall = null;
+  state.answered = false;
+  const scene = validScenes.has(progress.scene) ? progress.scene : 'intro';
+  if (scene === 'quiz') {
+    renderQuestion();
+    showScene('quiz');
+  } else if (scene === 'result') {
+    document.getElementById('resultScore').textContent = state.score;
+    document.getElementById('pickCount').textContent = state.score;
+    showScene('result');
+  } else if (scene === 'gift') {
+    restoreGiftScene();
+  } else if (scene === 'summary') {
+    renderSummary();
+    showScene('summary');
+    syncAwardedGifts();
+  } else if (scene === 'memories') {
+    renderMemoriesFromConfig();
+    showScene('memories');
+  } else {
+    showScene(scene);
+  }
+  return true;
+}
+
+window.restoreExperienceProgress = restoreExperienceProgress;
+window.addEventListener('beforeunload', saveExperienceProgress);
+
 function showScene(name) {
   if (state.scene === 'cake' && name !== 'cake') stopMic();
   state.scene = name;
@@ -346,6 +519,7 @@ function showScene(name) {
   const el = document.getElementById('scene-' + name);
   if (el) el.classList.add('active');
   if (name === 'final') celebrate(70);
+  saveExperienceProgress();
 }
 
 function begin() {
@@ -704,6 +878,7 @@ function answerQuestion(i, btn) {
     } else {
       state.answered = false;
       renderQuestion();
+      saveExperienceProgress();
     }
   }, 1050);
 }
@@ -796,6 +971,7 @@ function openBox() {
   document.getElementById('boxBtn').style.display = 'none';
   document.getElementById('giftHint').textContent =
     `มีลูกบอล ${experienceConfig.giftBox.ballCount} ลูก แต่เลือกได้ ${state.picks} ลูก... เลือกดี ๆ นะ 👀`;
+  saveExperienceProgress();
   tone(250, 0.12, 0.04);
   setTimeout(() => tone(480, 0.2, 0.04), 160);
 }
@@ -877,6 +1053,7 @@ function keepGift() {
     document.getElementById('giftHint').textContent =
       `เหลืออีก ${state.picks - state.used} ลูกที่จะเลือกได้ ✨`;
   }
+  saveExperienceProgress();
 }
 
 function matchingConsolationRule() {
@@ -941,7 +1118,13 @@ function continueAfterGiftRewards() {
 
 function startGuaranteedGifts() {
   const config = experienceConfig.giftBox.guaranteedGifts;
-  state.guaranteedGiftIndex = 0;
+  const completedCount = state.gifts.filter((gift) => gift.guaranteed).length;
+  state.guaranteedGiftIndex = Math.min(completedCount, config.items.length);
+  if (state.guaranteedGiftIndex >= config.items.length) {
+    state.guaranteedGiftsCompleted = true;
+    continueAfterGiftRewards();
+    return;
+  }
   state.guaranteedGiftTapCount = 0;
   document.getElementById('guaranteedGiftCardIcon').textContent =
     config.cardIcon || '💝';
@@ -953,6 +1136,8 @@ function startGuaranteedGifts() {
   document.getElementById('guaranteedGiftUnwrap').hidden = true;
   document.getElementById('guaranteedGiftResult').hidden = true;
   document.getElementById('guaranteedGiftOverlay').classList.add('show');
+  if (state.guaranteedGiftIndex > 0) openNextGuaranteedGift();
+  saveExperienceProgress();
   celebrate(60);
 }
 function openNextGuaranteedGift() {
@@ -1065,10 +1250,12 @@ function keepGuaranteedGift() {
     experienceConfig.giftBox.guaranteedGifts.items.length
   ) {
     openNextGuaranteedGift();
+    saveExperienceProgress();
     return;
   }
   state.guaranteedGiftsCompleted = true;
   document.getElementById('guaranteedGiftOverlay').classList.remove('show');
+  saveExperienceProgress();
   continueAfterGiftRewards();
 }
 
@@ -1086,6 +1273,7 @@ function showConsolation(rule) {
       remaining
     ),
   };
+  saveExperienceProgress();
   document.getElementById('consolationRuleLabel').textContent = rule.label;
   document.getElementById('consolationIcon').textContent =
     config.cardIcon || '💝';
@@ -1130,6 +1318,7 @@ function chooseConsolation(type) {
     document.getElementById('giftHint').textContent =
       `รางวัลปลอบใจ: เลือกเพิ่มได้อีก ${reward.actualExtraPicks} ลูก ✨`;
     state.consolationReward = null;
+    saveExperienceProgress();
     return;
   }
   openConsolationGift();
@@ -1214,6 +1403,7 @@ function keepConsolationGift() {
   state.gifts.push(bonus);
   state.consolationReward = null;
   document.getElementById('consolationUnwrapOverlay').classList.remove('show');
+  saveExperienceProgress();
   continueAfterGiftRewards();
 }
 
@@ -1400,7 +1590,7 @@ function celebrate(count = 35) {
   }
 }
 
-function restartExperience() {
+function restartExperience({ preserveProgress = false } = {}) {
   stopMic();
   clearInterval(state.melodyTimer);
   clearTimeout(state.birthdaySpeechTimer);
@@ -1437,6 +1627,7 @@ function restartExperience() {
   finalButton.disabled = false;
   finalButton.hidden = false;
   finalButton.textContent = 'มีอีกอย่างหนึ่ง... ❤️';
+  if (!preserveProgress) clearExperienceProgress();
   showScene('intro');
 }
 function jumpScene(name) {

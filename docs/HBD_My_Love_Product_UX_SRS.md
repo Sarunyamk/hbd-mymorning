@@ -38,7 +38,7 @@ HBD My Love คือเครื่องมือสร้าง Birthday Expe
 - Authentication และ Database: Supabase
 - Authorization: PostgreSQL Row Level Security
 - Public data access: Database RPC ที่คืนเฉพาะ Published snapshot
-- Local persistence: Local Storage เป็น Draft fallback
+- Local persistence: Local Storage เป็น Draft fallback และเก็บ Runtime progress แยกตาม Public Experience
 - Avatar และ Memories: External HTTPS URL หรือ Google Drive share URL ที่เปิดดูได้
 - Optional server-side operation: Supabase Edge Function สำหรับ Admin user management
 
@@ -156,6 +156,8 @@ Quiz และ Memories สามารถปิดได้ การปิด 
 - รางวัลที่ใช้แล้วต้องคงอยู่ใน Summary พร้อมตรา `ใช้แล้ว` และไม่สามารถกดใช้ซ้ำ
 - หากบันทึก Cloud ไม่สำเร็จ ห้ามแสดงสถานะว่าใช้แล้วและต้องเปิดให้ลองใหม่
 - การลบ Experience หรือเจ้าของ Account ต้องลบประวัติรางวัลต่อเนื่องด้วย Database cascade
+- Public Experience ต้องกู้คืนฉาก คะแนน สิทธิ์จับ และรางวัลที่เก็บแล้วเมื่อ Refresh บนอุปกรณ์เดิม
+- การกดเริ่มใหม่โดยผู้รับต้องล้าง Runtime progress เดิมก่อนเริ่มรอบใหม่
 
 ### Memories
 
@@ -261,10 +263,11 @@ Scene selector ยังต้องใช้ Manual override ได้ แล�
 9. Consolation และ Guaranteed gifts ทำงานตาม Config โดยไม่ให้ซ้ำ
 10. Summary แสดงรางวัลทั้งหมด แยกประเภทพิเศษ และบันทึกสถานะใช้รางวัลจริงได้
 11. รางวัลต้องแสดง `ใช้แล้ว` หลัง Database ยืนยัน และห้ามแสดงสำเร็จเมื่อ Offline หรือ RPC ล้มเหลว
-12. Creator A ไม่สามารถอ่านหรือแก้ข้อมูลของ Creator B
-13. Public URL เปิดได้โดยไม่ Login และแสดงเฉพาะ Published snapshot
-14. QR เดิมยังใช้ได้หลัง Republish
-15. Production build ผ่านและใช้งานบน HTTPS ได้
+12. การ Refresh Public Experience บนอุปกรณ์เดิมต้องกลับสู่ฉากล่าสุดโดยไม่เริ่ม Journey ใหม่
+13. Creator A ไม่สามารถอ่านหรือแก้ข้อมูลของ Creator B
+14. Public URL เปิดได้โดยไม่ Login และแสดงเฉพาะ Published snapshot
+15. QR เดิมยังใช้ได้หลัง Republish
+16. Production build ผ่านและใช้งานบน HTTPS ได้
 
 ## 13. Product principle
 
