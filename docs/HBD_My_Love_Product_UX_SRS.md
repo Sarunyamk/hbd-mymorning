@@ -233,7 +233,9 @@ Scene selector ยังต้องใช้ Manual override ได้ แล�
 - รองรับ Keyboard focus และมี Accessible labels
 - สีข้อความและปุ่มต้องมี Contrast ที่อ่านได้
 - รองรับ `prefers-reduced-motion` เท่าที่ Interaction อนุญาต
-- ปิดเพลงได้ และมี Press-and-hold fallback เมื่อ Microphone ใช้ไม่ได้
+- Background music ใช้ไฟล์ `assets/audio/hbd2me.mp3` แบบ Loop หลังผู้รับกดเริ่ม และต้องเปิด–ปิดได้ตลอด Journey
+- ห้ามสร้างเพลง Happy Birthday หรือเสียงอ่านข้อความด้วย Browser oscillator/SpeechSynthesis
+- มี Press-and-hold fallback เมื่อ Microphone ใช้ไม่ได้
 - Experience ต้องทำงานแม้ Browser ไม่รองรับ Vibration
 - ข้อความยาวต้อง Wrap และไม่ดันปุ่มออกนอก Mobile viewport
 

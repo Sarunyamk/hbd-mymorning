@@ -8,10 +8,8 @@ const state = {
   gifts: [],
   selectedBall: null,
   music: true,
+  backgroundMusic: null,
   audioCtx: null,
-  melodyTimer: null,
-  birthdaySpeechTimer: null,
-  birthdaySpoken: false,
   micStream: null,
   micSource: null,
   analyser: null,
@@ -360,6 +358,7 @@ function saveExperienceProgress() {
     picks: state.picks,
     used: state.used,
     gifts: state.gifts,
+    music: state.music,
     boxOpened: state.boxOpened,
     blowCompleted: state.blowCompleted,
     finalOpened: state.finalOpened,
@@ -472,6 +471,8 @@ function restoreExperienceProgress(publicId) {
   state.gifts = Array.isArray(progress.gifts)
     ? cloneValue(progress.gifts).slice(0, 40)
     : [];
+  state.music = progress.music !== false;
+  updateMusicButton();
   state.boxOpened = Boolean(progress.boxOpened);
   state.blowCompleted = Boolean(progress.blowCompleted);
   state.finalOpened = Boolean(progress.finalOpened);
@@ -504,6 +505,7 @@ function restoreExperienceProgress(publicId) {
   } else {
     showScene(scene);
   }
+  if (scene !== 'intro' && state.music) playBackgroundMusic();
   return true;
 }
 
@@ -524,7 +526,7 @@ function showScene(name) {
 
 function begin() {
   ensureAudio();
-  playBirthdayLoop();
+  playBackgroundMusic();
   showScene('cake');
 }
 
@@ -555,66 +557,56 @@ function tone(freq, dur = 0.18, vol = 0.045, delay = 0) {
   o.start(state.audioCtx.currentTime + delay);
   o.stop(state.audioCtx.currentTime + delay + dur + 0.02);
 }
-function playBirthdayPhrase() {
-  const n = [
-    392, 392, 440, 392, 523.25, 493.88, 392, 392, 440, 392, 587.33, 523.25, 392,
-    392, 784, 659.25, 523.25, 493.88, 440, 698.46, 698.46, 659.25, 523.25,
-    587.33, 523.25,
-  ];
-  let t = 0;
-  n.forEach((f, i) => {
-    tone(f, i % 6 === 5 ? 0.42 : 0.24, 0.035, t);
-    t += i % 6 === 5 ? 0.46 : 0.27;
-  });
-  scheduleBirthdayGreeting();
+const BACKGROUND_MUSIC_URL = 'assets/audio/hbd2me.mp3';
+const BACKGROUND_MUSIC_VOLUME = 0.55;
+const BACKGROUND_MUSIC_MIC_VOLUME = 0.12;
+
+function getBackgroundMusic() {
+  if (!state.backgroundMusic) {
+    const audio = new Audio(BACKGROUND_MUSIC_URL);
+    audio.loop = true;
+    audio.preload = 'auto';
+    audio.volume = BACKGROUND_MUSIC_VOLUME;
+    state.backgroundMusic = audio;
+  }
+  return state.backgroundMusic;
 }
-function scheduleBirthdayGreeting() {
-  if (
-    state.birthdaySpoken ||
-    state.birthdaySpeechTimer ||
-    !state.music ||
-    !('speechSynthesis' in window)
-  )
-    return;
-  state.birthdaySpeechTimer = setTimeout(() => {
-    state.birthdaySpeechTimer = null;
-    if (!state.music || state.birthdaySpoken) return;
-    const name = String(experienceConfig.birthday?.name || '').trim();
-    const greeting = new SpeechSynthesisUtterance(
-      `Happy Birthday to ${name ? `, ${name}` : 'you'}!`
-    );
-    greeting.lang = 'en-US';
-    greeting.rate = 0.88;
-    greeting.pitch = 1.08;
-    greeting.volume = 0.82;
-    const voices = window.speechSynthesis.getVoices();
-    greeting.voice =
-      voices.find((voice) => /^en-(US|GB)/i.test(voice.lang)) ||
-      voices.find((voice) => /^en/i.test(voice.lang)) ||
-      null;
-    state.birthdaySpoken = true;
-    window.speechSynthesis.speak(greeting);
-  }, 3550);
+
+function updateMusicButton() {
+  const button = document.getElementById('musicBtn');
+  if (!button) return;
+  button.textContent = state.music ? '🔊 Music' : '🔇 Muted';
+  button.setAttribute('aria-pressed', String(state.music));
 }
-function playBirthdayLoop() {
-  clearInterval(state.melodyTimer);
-  if (state.music) playBirthdayPhrase();
-  state.melodyTimer = setInterval(() => {
-    if (state.music) playBirthdayPhrase();
-  }, 9000);
+
+async function playBackgroundMusic() {
+  if (!state.music) return;
+  try {
+    await getBackgroundMusic().play();
+  } catch (error) {
+    if (error?.name === 'NotAllowedError') {
+      state.music = false;
+      updateMusicButton();
+      return;
+    }
+    console.error('Background music error:', error);
+  }
 }
+
+function stopBackgroundMusic({ reset = false } = {}) {
+  if (!state.backgroundMusic) return;
+  state.backgroundMusic.pause();
+  if (reset) state.backgroundMusic.currentTime = 0;
+}
+
 function toggleMusic() {
   state.music = !state.music;
-  document.getElementById('musicBtn').textContent = state.music
-    ? '🔊 Music'
-    : '🔇 Muted';
+  updateMusicButton();
   if (state.music) {
     ensureAudio();
-    playBirthdayPhrase();
+    playBackgroundMusic();
   } else {
-    clearTimeout(state.birthdaySpeechTimer);
-    state.birthdaySpeechTimer = null;
-    window.speechSynthesis?.cancel();
+    stopBackgroundMusic();
   }
 }
 
@@ -748,6 +740,8 @@ async function enableMic() {
     state.analyser.fftSize = MIC_CONFIG.fftSize;
     state.analyser.smoothingTimeConstant = MIC_CONFIG.smoothing;
     state.micSource.connect(state.analyser);
+    if (state.backgroundMusic)
+      state.backgroundMusic.volume = BACKGROUND_MUSIC_MIC_VOLUME;
     button.textContent = '🎙️ กำลังฟัง...';
     button.disabled = true;
     status.textContent = '🎙️ ไมค์พร้อมแล้ว ลองเป่าได้เลย';
@@ -801,6 +795,8 @@ function stopMic() {
   state.micStream = null;
   state.micSource = null;
   state.analyser = null;
+  if (state.backgroundMusic)
+    state.backgroundMusic.volume = BACKGROUND_MUSIC_VOLUME;
   sustained = 0;
   const button = document.getElementById('micBtn');
   if (button) {
@@ -1592,11 +1588,7 @@ function celebrate(count = 35) {
 
 function restartExperience({ preserveProgress = false } = {}) {
   stopMic();
-  clearInterval(state.melodyTimer);
-  clearTimeout(state.birthdaySpeechTimer);
-  state.birthdaySpeechTimer = null;
-  state.birthdaySpoken = false;
-  window.speechSynthesis?.cancel();
+  stopBackgroundMusic({ reset: true });
   state.score = 0;
   state.qIndex = 0;
   state.picks = 0;

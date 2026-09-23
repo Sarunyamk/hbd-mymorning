@@ -12,6 +12,7 @@
 - Live Preview ด้วย Renderer เดียวกับหน้า Public
 - ปรับชื่อ ข้อความ เค้ก Avatar Quiz Gift Balls ของรางวัล และ Memories
 - Color Theme สำเร็จรูป 15 แบบ
+- เพลง Happy Birthday จากไฟล์ MP3 แบบวนซ้ำ พร้อมปุ่มเปิด–ปิดตลอด Journey
 - เปิดหรือปิด Quiz และกำหนดจำนวนของขวัญที่เปิดได้
 - รางวัลปลอบใจแบบของขวัญพิเศษ สิทธิ์จับเพิ่ม หรือให้ผู้รับเลือกเอง
 - รางวัลพิเศษแบบการันตี กำหนดได้หลายรางวัลและไม่ขึ้นกับผลการสุ่ม
@@ -258,7 +259,8 @@ supabase/functions/admin-users/        Optional Admin Edge Function
 - Public page อ่านเฉพาะ Published snapshot ผ่าน RPC และไม่อ่านตารางทั้งหมด
 - Secret หรือ Service Role ใช้ได้เฉพาะ Server/Edge Function
 - Microphone ต้องใช้ HTTPS หรือ `localhost`
-- Browser จะเริ่มเสียงหลังผู้ใช้ Interaction เท่านั้น เนื่องจาก Autoplay policy
+- เพลง `assets/audio/hbd2me.mp3` จะเริ่มหลังผู้รับกดเริ่มและวนซ้ำจนจบ Journey โดย Browser จะเริ่มเสียงหลังผู้ใช้ Interaction เท่านั้นตาม Autoplay policy
+- Web Audio ยังใช้สำหรับ Microphone detection และ Sound effects สั้น ๆ แต่ไม่สร้างเพลง Happy Birthday หรือเสียงพูดด้วย Browser
 
 ## Commands
 
