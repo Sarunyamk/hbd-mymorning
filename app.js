@@ -32,6 +32,8 @@ const state = {
   guaranteedBowDrag: null,
   awardedGiftRecords: new Map(),
   awardSyncStatus: 'idle',
+  awardGeneration: 0,
+  awardResetting: false,
 };
 
 const MIC_CONFIG = {
@@ -336,7 +338,6 @@ function sparkleInit() {
 sparkleInit();
 
 const EXPERIENCE_PROGRESS_VERSION = 1;
-const EXPERIENCE_PROGRESS_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
 
 function experienceProgressKey(publicId = window.PUBLIC_EXPERIENCE_ID) {
   return publicId ? `hbd-public-progress-v1:${publicId}` : '';
@@ -358,6 +359,7 @@ function saveExperienceProgress() {
     picks: state.picks,
     used: state.used,
     gifts: state.gifts,
+    awardGeneration: state.awardGeneration,
     music: state.music,
     boxOpened: state.boxOpened,
     blowCompleted: state.blowCompleted,
@@ -439,7 +441,7 @@ function restoreExperienceProgress(publicId) {
   if (
     !progress ||
     progress.version !== EXPERIENCE_PROGRESS_VERSION ||
-    Date.now() - Number(progress.savedAt || 0) > EXPERIENCE_PROGRESS_MAX_AGE
+    Number(progress.awardGeneration || 0) !== state.awardGeneration
   ) {
     localStorage.removeItem(key);
     return false;
@@ -510,6 +512,39 @@ function restoreExperienceProgress(publicId) {
 }
 
 window.restoreExperienceProgress = restoreExperienceProgress;
+function giftFromAwardRecord(record) {
+  return {
+    ...record.gift_snapshot,
+    source: record.source,
+    guaranteed: record.source === 'guaranteed-gift',
+    consolation: record.source === 'consolation',
+  };
+}
+
+window.initializeCurrentAwards = function initializeCurrentAwards(publicId, awardState) {
+  state.awardGeneration = Number(awardState?.generation) || 0;
+  const records = Array.isArray(awardState?.awards) ? awardState.awards : [];
+  state.awardedGiftRecords = new Map(
+    records.map((record) => [record.award_key, record])
+  );
+  state.awardSyncStatus = records.length ? 'ready' : 'idle';
+  const restored = restoreExperienceProgress(publicId);
+  const completed = ['summary', 'final', 'memories'].includes(state.scene);
+  if (records.length && (!restored || completed)) {
+    const savedKeys = new Set(state.gifts.map(giftAwardKey));
+    const allSaved = restored && state.gifts.every((gift) =>
+      state.awardedGiftRecords.has(giftAwardKey(gift))
+    );
+    if (!restored || allSaved) {
+      state.gifts = records.map(giftFromAwardRecord);
+      if (!restored) showScene('summary');
+      renderSummary();
+      saveExperienceProgress();
+    } else if (savedKeys.size) {
+      syncAwardedGifts();
+    }
+  }
+};
 window.addEventListener('beforeunload', saveExperienceProgress);
 
 function showScene(name) {
@@ -1050,6 +1085,7 @@ function keepGift() {
       `เหลืออีก ${state.picks - state.used} ลูกที่จะเลือกได้ ✨`;
   }
   saveExperienceProgress();
+  syncAwardedGifts();
 }
 
 function matchingConsolationRule() {
@@ -1240,6 +1276,7 @@ function keepGuaranteedGift() {
     guaranteed: true,
     source: 'guaranteed-gift',
   });
+  syncAwardedGifts();
   state.guaranteedGiftIndex++;
   if (
     state.guaranteedGiftIndex <
@@ -1397,6 +1434,7 @@ function keepConsolationGift() {
     source: 'consolation',
   };
   state.gifts.push(bonus);
+  syncAwardedGifts();
   state.consolationReward = null;
   document.getElementById('consolationUnwrapOverlay').classList.remove('show');
   saveExperienceProgress();
@@ -1431,8 +1469,9 @@ function giftAwardKey(gift) {
 
 async function syncAwardedGifts() {
   const api = window.giftRedemptionApi;
-  if (!api?.enabled || !state.gifts.length || state.awardSyncStatus === 'syncing')
+  if (!api?.enabled || !state.gifts.length || state.awardSyncStatus === 'syncing' || state.awardResetting)
     return;
+  const generation = state.awardGeneration;
   const awards = state.gifts
     .map((gift) => ({
       awardKey: giftAwardKey(gift),
@@ -1444,19 +1483,33 @@ async function syncAwardedGifts() {
   state.awardSyncStatus = 'syncing';
   renderSummary();
   try {
-    const records = await api.syncAwards(awards);
-    state.awardedGiftRecords = new Map(
-      records.map((record) => [record.award_key, record])
-    );
+    const records = await api.syncAwards(awards, generation);
+    if (generation !== state.awardGeneration || state.awardResetting) return;
+    records.forEach((record) => {
+      const existing = state.awardedGiftRecords.get(record.award_key);
+      if (existing?.status !== 'redeemed' || record.status === 'redeemed')
+        state.awardedGiftRecords.set(record.award_key, record);
+    });
+    state.gifts = state.gifts.map((gift) => {
+      const record = state.awardedGiftRecords.get(giftAwardKey(gift));
+      return record ? giftFromAwardRecord(record) : gift;
+    });
+    saveExperienceProgress();
     state.awardSyncStatus = 'ready';
   } catch (error) {
+    if (generation !== state.awardGeneration || state.awardResetting) return;
     console.error('Award sync error:', error);
     state.awardSyncStatus = 'error';
   }
   renderSummary();
+  if (state.awardSyncStatus === 'ready' && state.gifts.some(
+    (gift) => !state.awardedGiftRecords.has(giftAwardKey(gift))
+  )) syncAwardedGifts();
 }
 
 async function redeemGiftAward(awardKey) {
+  if (state.awardResetting) return;
+  const generation = state.awardGeneration;
   const record = state.awardedGiftRecords.get(awardKey);
   if (!record || record.status === 'redeemed') return;
   if (!confirm('ยืนยันใช้รางวัลนี้หรือไม่? เมื่อยืนยันแล้วจะแสดงว่าใช้แล้ว'))
@@ -1469,7 +1522,8 @@ async function redeemGiftAward(awardKey) {
     button.textContent = 'กำลังบันทึก…';
   }
   try {
-    const updated = await window.giftRedemptionApi.redeemAward(record.award_id);
+    const updated = await window.giftRedemptionApi.redeemAward(record.award_id, generation);
+    if (generation !== state.awardGeneration || state.awardResetting) return;
     state.awardedGiftRecords.set(awardKey, {
       ...record,
       ...updated,
@@ -1477,6 +1531,7 @@ async function redeemGiftAward(awardKey) {
     });
     renderSummary();
   } catch (error) {
+    if (generation !== state.awardGeneration || state.awardResetting) return;
     console.error('Award redemption error:', error);
     alert(
       navigator.onLine
@@ -1490,7 +1545,9 @@ async function redeemGiftAward(awardKey) {
 function renderSummary() {
   const root = document.getElementById('giftGrid');
   root.innerHTML = '';
-  const list = state.gifts.length ? state.gifts : gifts.slice(0, 8);
+  const list = state.gifts.length
+    ? state.gifts
+    : window.giftRedemptionApi?.enabled ? [] : gifts.slice(0, 8);
   list.forEach((g, i) => {
     const d = document.createElement('div');
     d.className =
@@ -1586,7 +1643,23 @@ function celebrate(count = 35) {
   }
 }
 
-function restartExperience({ preserveProgress = false } = {}) {
+async function restartExperience({ preserveProgress = false } = {}) {
+  const api = window.giftRedemptionApi;
+  if (!preserveProgress && api?.enabled && document.documentElement.classList.contains('public-ready')) {
+    if (state.awardResetting) return;
+    state.awardResetting = true;
+    try {
+      state.awardGeneration = await api.resetAwards(state.awardGeneration);
+    } catch (error) {
+      console.error('Award reset error:', error);
+      if (state.awardSyncStatus === 'syncing') state.awardSyncStatus = 'error';
+      renderSummary();
+      alert('เริ่มใหม่ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง');
+      return;
+    } finally {
+      state.awardResetting = false;
+    }
+  }
   stopMic();
   stopBackgroundMusic({ reset: true });
   state.score = 0;

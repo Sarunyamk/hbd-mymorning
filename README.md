@@ -53,6 +53,7 @@ pnpm install --frozen-lockfile
 1. [`supabase/migrations/20260811000000_phase10_foundation.sql`](supabase/migrations/20260811000000_phase10_foundation.sql)
 2. [`supabase/migrations/20260811010000_admin_roles.sql`](supabase/migrations/20260811010000_admin_roles.sql)
 3. [`supabase/migrations/20260921000000_gift_redemptions.sql`](supabase/migrations/20260921000000_gift_redemptions.sql)
+4. [`supabase/migrations/20260923000000_single_current_awards.sql`](supabase/migrations/20260923000000_single_current_awards.sql)
 
 Migration จะสร้าง `experiences`, `profiles`, `awarded_gifts`, RLS policies, Database functions และ Public RPC สำหรับโหลด Published Experience รวมถึงบันทึกและใช้รางวัลจริง
 
@@ -72,9 +73,9 @@ Migration นี้เพิ่ม:
 - RLS และ Owner policy สำหรับข้อมูลรางวัล
 - `ON DELETE CASCADE` เพื่อลบรางวัลตาม Experience เมื่อเจ้าของลบงานหรือ Account
 
-หลัง Deploy เมื่อผู้รับมาถึง Summary ระบบจะบันทึกรางวัลอัตโนมัติ ปุ่มจะแสดง `ใช้` เมื่อ Cloud ยืนยันแล้ว และจะแสดงตรา `ใช้แล้ว ✓` หลังยืนยันใช้สำเร็จ หาก RPC หรือ Internet มีปัญหา ระบบจะไม่สร้างสถานะสำเร็จปลอมและจะแสดงปุ่มให้ลองเชื่อมต่อใหม่
+หลัง Deploy ระบบจะบันทึกรางวัลอัตโนมัติเมื่อผู้รับเก็บรางวัลแต่ละชิ้น ปุ่มบนหน้า Summary จะแสดง `ใช้` เมื่อ Cloud ยืนยันแล้ว และจะแสดงตรา `ใช้แล้ว ✓` หลังยืนยันใช้สำเร็จ หาก RPC หรือ Internet มีปัญหา ระบบจะไม่สร้างสถานะสำเร็จปลอมและจะแสดงปุ่มให้ลองเชื่อมต่อใหม่
 
-Runtime progress ของ Public Experience เก็บใน Local Storage แยกตาม `public_id` เป็นเวลาไม่เกิน 30 วัน การ Refresh บนอุปกรณ์และ Browser เดิมจะกลับฉากล่าสุดพร้อมคะแนน สิทธิ์จับ และรางวัลที่เก็บแล้ว ส่วนการกด `เริ่มใหม่` จะล้าง Progress เดิม ฟังก์ชันนี้ไม่ใช่การ Sync progress ข้ามอุปกรณ์ แต่สถานะการใช้รางวัลจริงเก็บใน Supabase
+Runtime progress ของ Public Experience เก็บใน Local Storage แยกตาม `public_id` การ Refresh บนอุปกรณ์และ Browser เดิมจะกลับฉากล่าสุดพร้อมคะแนน สิทธิ์จับ และรางวัลที่เก็บแล้ว ส่วนสถานะรางวัลจริงเก็บใน Supabase
 
 หลัง Upgrade ให้ตรวจว่า Database มีตารางและ Functions ต่อไปนี้:
 
@@ -83,6 +84,14 @@ public.awarded_gifts
 public.sync_awarded_gifts(uuid, jsonb)
 public.redeem_awarded_gift(uuid, uuid)
 ```
+
+### Upgrade: เริ่มใหม่ล้างรางวัลชุดปัจจุบัน
+
+หากเคยรัน Migration ลำดับที่ 1–3 แล้ว ให้รันไฟล์ลำดับที่ 4 ทั้งไฟล์ใน Supabase SQL Editor จากนั้นรัน `notify pgrst, 'reload schema';` แล้ว Deploy Frontend เวอร์ชันใหม่นี้ Migration เพิ่มเลขเวอร์ชันข้อมูลและ Public RPC สำหรับอ่าน บันทึก ใช้ และล้างรางวัลชุดปัจจุบัน ไม่ต้องสร้างตารางรอบหรือแก้ข้อมูลรางวัลด้วยมือ
+
+เมื่อผู้รับกด `เริ่มใหม่` ระบบจะลบรายการใน `awarded_gifts` ของ Experience นั้นทั้งหมด รวมถึงสถานะ `redeemed` แล้วกลับไป Tap to Begin หากคำสั่งล้างบน Supabase ไม่สำเร็จ หน้าเว็บจะยังคงข้อมูลเดิมไว้ การ Refresh หรือปิดแล้วเปิดใหม่ใน Browser เดิมจะคืนความคืบหน้าปัจจุบัน; รางวัลที่บันทึกแล้วสามารถโหลดจาก Supabase ได้ด้วย เลขเวอร์ชันช่วยป้องกันคำสั่งจากก่อนการรีเซ็ตกลับมาสร้างรางวัลเก่าอีก
+
+RPC ใหม่คือ `get_current_awards(uuid)`, `reset_current_awards(uuid, bigint)`, `sync_current_awards(uuid, bigint, jsonb)` และ `redeem_current_award(uuid, bigint, uuid)`; RPC บันทึกและใช้รางวัลแบบเดิมถูกปิดสำหรับ Public หลัง Migration นี้ ควร Deploy Frontend ใหม่ทันทีหลังรัน SQL
 
 ## 3. ตั้งค่า Environment Variables
 

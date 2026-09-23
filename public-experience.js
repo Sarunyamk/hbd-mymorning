@@ -10,19 +10,38 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 
 window.giftRedemptionApi = {
   enabled: Boolean(publicId && uuidPattern.test(publicId) && isSupabaseConfigured),
-  async syncAwards(awards) {
+  async getCurrentAwards() {
     if (!this.enabled) throw new Error('GIFT_REDEMPTION_UNAVAILABLE');
-    const { data, error } = await supabase.rpc('sync_awarded_gifts', {
+    const { data, error } = await supabase.rpc('get_current_awards', {
       p_public_id: publicId,
+    });
+    if (error) throw error;
+    return data;
+  },
+  async resetAwards(generation) {
+    if (!this.enabled) throw new Error('GIFT_REDEMPTION_UNAVAILABLE');
+    const { data, error } = await supabase.rpc('reset_current_awards', {
+      p_public_id: publicId,
+      p_generation: generation,
+    });
+    if (error) throw error;
+    return Number(data);
+  },
+  async syncAwards(awards, generation) {
+    if (!this.enabled) throw new Error('GIFT_REDEMPTION_UNAVAILABLE');
+    const { data, error } = await supabase.rpc('sync_current_awards', {
+      p_public_id: publicId,
+      p_generation: generation,
       p_awards: awards,
     });
     if (error) throw error;
     return Array.isArray(data) ? data : [];
   },
-  async redeemAward(awardId) {
+  async redeemAward(awardId, generation) {
     if (!this.enabled) throw new Error('GIFT_REDEMPTION_UNAVAILABLE');
-    const { data, error } = await supabase.rpc('redeem_awarded_gift', {
+    const { data, error } = await supabase.rpc('redeem_current_award', {
       p_public_id: publicId,
+      p_generation: generation,
       p_award_id: awardId,
     });
     if (error) throw error;
@@ -69,11 +88,12 @@ async function loadPublishedExperience() {
     }
     const validation = window.applyExperienceConfig(published.config);
     if (!validation?.valid) throw new Error('INVALID_PUBLISHED_CONFIG');
+    const awards = await window.giftRedemptionApi.getCurrentAwards();
     const recipientName = published.config?.birthday?.name || 'My Love';
     document.title = `Happy Birthday ${recipientName}`;
     document.documentElement.classList.remove('public-loading', 'public-error');
     document.documentElement.classList.add('public-ready');
-    window.restoreExperienceProgress?.(publicId);
+    window.initializeCurrentAwards?.(publicId, awards);
   } catch (error) {
     console.error('Published experience load error:', error);
     showError('โหลด Birthday Experience ไม่สำเร็จ', navigator.onLine ? 'กรุณาลองอีกครั้งในอีกสักครู่' : 'กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง');
